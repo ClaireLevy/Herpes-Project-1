@@ -62,6 +62,13 @@ pData$Time <- as.character(pData$Time)
 #need to remove phenodata for the samples that failed. The rownames
 #start at 7 (1-6 were the tenofovir samples). So the sampleNames are now
 #6 ahead of the the row numbers (sample 33 is in the 27th row of data)
+# missing samples 33=ID326 T1 M D1
+#34=ID 326 T2 V1 D1
+#35=ID 326 T3 V2 D1
+#36 ID 317 T2 M D1
+#45 ID 318 T3 V1 D1
+#63 ID 327 T2 V1 D1
+#64 ID 319 T2 M D1
 
 #make a vector of rownames I want to remove
 toExclude<-c("33","34","35","36","45","63","64")
@@ -154,8 +161,39 @@ boxplot(QNTB.complete.RAW.lumi)
 #to any of the treatment combinations.
 
 #Our treatment combinations are TissueID/Treatment/Time
-#We have 7 Tissue IDs x 3 Treatments x 3 time points=21 so the smallest number
-# of replicates possible for any of those 21 treatments is 7??
+#We have 7 Tissue IDs x 3 Treatments x 3 time points=63 so the smallest number
+# of replicates possible for any of those 63 arrays is 7??
 
+#TODO
+#How do we deal with the fact that 3 of our missing samples
+# are from the same tissueID?
+#33=ID326 T1 M D1
+#34=ID 326 T2 V1 D1
+#35=ID 326 T3 V2 D1
 
+#this is how the detection filtering works
+#Mark the detection pvalues (there is one per probe per sample) with a 1 if <0.05 or a 0 if >0.05
+# using (detection(QNTB.complete.RAW.lumi)<0.05)
+
+#add up the 0's and 1's across each row (i.e. for all the samples)
+#using rowSums
+
+#now you have the number of detection p values <0.05 for each probe
+#for all the samples (max possible = total samples)
+
+#now tell me which probes have a rowSum of >=7 (probes will be marked as TRUE
+# or false if they do or do not have >=7 rowSum)
+            
 detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=7
+
+#now extract just those probes that are TRUE from the lumibatch
+
+expressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
+
+#how many probes did we have before filtering?
+dims(QNTB.complete.RAW.lumi)#47323
+
+dims(expressedProbes.lumi)#21726
+
+#how many removed?
+dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
