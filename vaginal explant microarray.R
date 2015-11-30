@@ -197,3 +197,96 @@ dims(expressedProbes.lumi)#21726
 
 #how many removed?
 dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
+
+save(expressedProbes.lumi, file="expressedProbes.lumi.Rdata")
+
+
+
+############### SPLIT DATA INTO GROUPS BY COLLECTION TIME #########
+#We want to analyze the data separately for each collection time
+#so I will split the expression data (exprs()) into groups by time
+
+T1Data<-exprs(expressedProbes.lumi[,expressedProbes.lumi$Time=="3"])
+T2Data<-exprs(expressedProbes.lumi[,expressedProbes.lumi$Time =="8"])
+T3Data<-exprs(expressedProbes.lumi[,expressedProbes.lumi$Time =="24"])
+
+exprsDataList<-list(T1Data,T2Data,T3Data)
+
+############## TARGETS AND DESIGN MATRIX ###########################
+#use phenoData to make a targets frame with columns for TissueID and 
+# Virus for each time point (since we are missing samples, it is different
+#for each one)
+
+library(dplyr)
+library(limma)
+
+targets<-data.frame("TissueID"= expressedProbes.lumi$TissueID,
+                    "Treatment"=expressedProbes.lumi$Treatment,
+                    "Time"=expressedProbes.lumi$Time)
+
+#make a different targets DF for each time point
+targets1<-targets %>%
+  filter(Time==3)%>%
+  select(-Time)
+
+targets2<-targets %>%
+  filter(Time==8)%>%
+  select(-Time)
+
+targets3<-targets %>%
+  filter(Time==24)%>%
+  select(-Time)
+
+#make the targets DFs into a list for lapply-ing later
+targetList<-list(targets1,targets2,targets3)
+save(targetList, file="targetList.Rdata")
+#function for getting the factors of the treatments for each
+#timepoint
+factorTreatments<-function(targetDf)
+  factor(targetDf$Treatment, levels=c("Mock","SD90","V186"))
+
+Treatments<-lapply(targetList,FUN=factorTreatments)
+save(Treatments, file="Treatments.Rdata")
+#function to make the design matrix for each timepoint
+makeDesign<-function(Treatment)
+  model.matrix(~0+Treatment)
+
+#list of design matrices to use for fitting the model
+designList<-lapply(Treatments,FUN=makeDesign)
+save(designList, file = "designList.Rdata")
+######################## FITTING MODELS #######################
+
+library(limma)
+#fit linear models for each probe separately for the data
+#from each timepoint using the appropriate design matrix made above.
+
+#use mapply when you want to use 2 lists as the input for an
+#apply function, function is applied to first element of each, then
+#second..
+fit<-mapply(exprsDataList,designList,FUN=lmFit)
+
+
+#make a contrast matrix specifying the contrasts of interest
+#Do I really need to do this if I am interested in all contrasts?
+
+contrast.matrix<-makeContrasts(TreatmentV186-TreatmentMock, 
+                               TreatmentSD90-TreatmentMock,
+                               TreatmentV186-TreatmentSD90,
+                               levels = c("TreatmentV186","TreatmentSD90",
+                                          "TreatmentMock"))
+
+#given the model fit above, estimate coefficients for 
+#the specified contrasts. Why do you need to fit the original model
+#first? (fit)
+fit2<- lapply(fit, FUN=contrasts.fit,contrast.matrix)
+
+#compute differential expression statistics
+fit2<-lapply(fit2,FUN=eBayes)
+
+lapply(fit2,FUN=topTable,coef=1,adjust="BH")
+
+#generate top table of differentially expressed probes
+topTable(fit2[[1]],coef=1,adjust="BH")
+topTable(fit2[[2]],coef=1,adjust="BH")
+topTable(fit2[[3]],coef=1,adjust="BH")
+
