@@ -240,19 +240,33 @@ targets3<-targets %>%
 #make the targets DFs into a list for lapply-ing later
 targetList<-list(targets1,targets2,targets3)
 save(targetList, file="targetList.Rdata")
+
 #function for getting the factors of the treatments for each
 #timepoint
+
+
 factorTreatments<-function(targetDf)
   factor(targetDf$Treatment, levels=c("Mock","SD90","V186"))
 
 Treatments<-lapply(targetList,FUN=factorTreatments)
+
+factorTissueID<-function(targetDf)
+  factor(targetDf$TissueID)
+
+TissueIDs<-lapply(targetList,FUN=factorTissueID)
+
 save(Treatments, file="Treatments.Rdata")
+save(TissueIDs, file="TissueIDs.Rdata")
+
 #function to make the design matrix for each timepoint
-makeDesign<-function(Treatment)
-  model.matrix(~0+Treatment)
+
+#because we want to pair with mock, set it as intercept????
+makeDesign<-function(Treatments, TissueIDs)
+  model.matrix(~Treatments+TissueIDs)
 
 #list of design matrices to use for fitting the model
-designList<-lapply(Treatments,FUN=makeDesign)
+designList<-mapply(Treatments,TissueIDs,FUN=makeDesign)
+
 save(designList, file = "designList.Rdata")
 ######################## FITTING MODELS #######################
 
@@ -269,24 +283,23 @@ fit<-mapply(exprsDataList,designList,FUN=lmFit)
 #make a contrast matrix specifying the contrasts of interest
 #Do I really need to do this if I am interested in all contrasts?
 
-contrast.matrix<-makeContrasts(TreatmentV186-TreatmentMock, 
-                               TreatmentSD90-TreatmentMock,
-                               TreatmentV186-TreatmentSD90,
-                               levels = c("TreatmentV186","TreatmentSD90",
-                                          "TreatmentMock"))
+#contrast.matrix<-makeContrasts(TreatmentV186-TreatmentMock, 
+#                                TreatmentSD90-TreatmentMock,
+#                                TreatmentV186-TreatmentSD90,
+#                                levels = c("TreatmentV186","TreatmentSD90",
+#                                           "TreatmentMock"))
 
 #given the model fit above, estimate coefficients for 
 #the specified contrasts. Why do you need to fit the original model
 #first? (fit)
-fit2<- lapply(fit, FUN=contrasts.fit,contrast.matrix)
+#fit2<- lapply(fit, FUN=contrasts.fit,contrast.matrix)
 
 #compute differential expression statistics
-fit2<-lapply(fit2,FUN=eBayes)
+fit<-lapply(fit,FUN=eBayes)
 
-lapply(fit2,FUN=topTable,coef=1,adjust="BH")
+lapply(fit,FUN=topTable,coef=1,adjust="BH")
 
 #generate top table of differentially expressed probes
-topTable(fit2[[1]],coef=1,adjust="BH")
-topTable(fit2[[2]],coef=1,adjust="BH")
-topTable(fit2[[3]],coef=1,adjust="BH")
+topTable(fit[[3]],coef="TreatmentsV186",adjust="BH")
+
 
