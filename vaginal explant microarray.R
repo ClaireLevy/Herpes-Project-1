@@ -4,7 +4,7 @@ require(dplyr)
 require(lumi)
 require(limma)
 
-#############READ IN RAW MICROARRAY DATA FINAL REPORT ###########
+?#############READ IN RAW MICROARRAY DATA FINAL REPORT ###########
 #data from shared resources
 
 RAW<-"J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/Illumina/2015_11_10/GenomeStudioProject/SeanHughes_HumanHT12v4_151112/2015.11.12smhughesFinalReport.txt"
@@ -200,106 +200,56 @@ dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
 
 save(expressedProbes.lumi, file="expressedProbes.lumi.Rdata")
 
+############### TARGETS AND DESIGN MATRIX ###################
+targets<-pData(expressedProbes.lumi)%>%
+  select(TissueID, Treatment,Time)
+#following limma guide
+#pg 51 "multi level experiments". 
 
+#pg51
+# "If we only wanted to compare the two tissue types,
+# we could do a paired samples comparison. If we only
+# wanted to compared diseased to normal, we could do 
+# an ordinary two group comparison. Since we need to 
+# make comparisons both within and between subjects,
+# it is necessary to treat Patient as a random effect. 
+# This can be done in limma using the 
+# duplicateCorrelation function."
 
-############### SPLIT DATA INTO GROUPS BY COLLECTION TIME #########
-#We want to analyze the data separately for each collection time
-#so I will split the expression data (exprs()) into groups by time
+#In my exp, Treatment is analogous
+#to "condition" in the example, Time is analogous to Tissue
+# and TissueID is to subject.
+Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
 
-T1Data<-exprs(expressedProbes.lumi[,expressedProbes.lumi$Time=="3"])
-T2Data<-exprs(expressedProbes.lumi[,expressedProbes.lumi$Time =="8"])
-T3Data<-exprs(expressedProbes.lumi[,expressedProbes.lumi$Time =="24"])
+design<-model.matrix (~0+Treat)
 
-exprsDataList<-list(T1Data,T2Data,T3Data)
+#Then we estimate the correlation between
+#measurements made on the same subject
 
-############## TARGETS AND DESIGN MATRIX ###########################
-#use phenoData to make a targets frame with columns for TissueID and 
-# Virus for each time point (since we are missing samples, it is different
-#for each one)
+corfit<- duplicateCorrelation(expressedProbes.lumi,design,
+                              block=targets$TissueID)
 
-library(dplyr)
-library(limma)
+corfit$consensus
+#[1] 0.03368044
+#I guess this means that there isn't a correlation
+#within the tissueIDs?
 
-targets<-data.frame("TissueID"= expressedProbes.lumi$TissueID,
-                    "Treatment"=expressedProbes.lumi$Treatment,
-                    "Time"=expressedProbes.lumi$Time)
+#Then this inter-subject correlation is
+#input into the linear model fit
 
-#make a different targets DF for each time point
-targets1<-targets %>%
-  filter(Time==3)%>%
-  select(-Time)
+fit <- lmFit(expressedProbes.lumi,design,block=targets$TissueID,
+             correlation=corfit$consensus)
+#Now we can make any comparisons
+#between the experimental conditions
+cm<-makeContrasts(
+  SD90.3vsMock.3 = TreatSD90.3-TreatMock.3,
+  V186.3vsMock.3 = TreatV186.3-TreatMock.3,
+  levels = design
+)
 
-targets2<-targets %>%
-  filter(Time==8)%>%
-  select(-Time)
+fit2<-contrasts.fit(fit,cm)
 
-targets3<-targets %>%
-  filter(Time==24)%>%
-  select(-Time)
+fit2 <-eBayes(fit2)
 
-#make the targets DFs into a list for lapply-ing later
-targetList<-list(targets1,targets2,targets3)
-save(targetList, file="targetList.Rdata")
-
-#function for getting the factors of the treatments for each
-#timepoint
-
-
-factorTreatments<-function(targetDf)
-  factor(targetDf$Treatment, levels=c("Mock","SD90","V186"))
-
-Treatments<-lapply(targetList,FUN=factorTreatments)
-
-factorTissueID<-function(targetDf)
-  factor(targetDf$TissueID)
-
-TissueIDs<-lapply(targetList,FUN=factorTissueID)
-
-save(Treatments, file="Treatments.Rdata")
-save(TissueIDs, file="TissueIDs.Rdata")
-
-#function to make the design matrix for each timepoint
-
-#because we want to pair with mock, set it as intercept????
-makeDesign<-function(Treatments, TissueIDs)
-  model.matrix(~Treatments+TissueIDs)
-
-#list of design matrices to use for fitting the model
-designList<-mapply(Treatments,TissueIDs,FUN=makeDesign)
-
-save(designList, file = "designList.Rdata")
-######################## FITTING MODELS #######################
-
-library(limma)
-#fit linear models for each probe separately for the data
-#from each timepoint using the appropriate design matrix made above.
-
-#use mapply when you want to use 2 lists as the input for an
-#apply function, function is applied to first element of each, then
-#second..
-fit<-mapply(exprsDataList,designList,FUN=lmFit)
-
-
-#make a contrast matrix specifying the contrasts of interest
-#Do I really need to do this if I am interested in all contrasts?
-
-#contrast.matrix<-makeContrasts(TreatmentV186-TreatmentMock, 
-#                                TreatmentSD90-TreatmentMock,
-#                                TreatmentV186-TreatmentSD90,
-#                                levels = c("TreatmentV186","TreatmentSD90",
-#                                           "TreatmentMock"))
-
-#given the model fit above, estimate coefficients for 
-#the specified contrasts. Why do you need to fit the original model
-#first? (fit)
-#fit2<- lapply(fit, FUN=contrasts.fit,contrast.matrix)
-
-#compute differential expression statistics
-fit<-lapply(fit,FUN=eBayes)
-
-lapply(fit,FUN=topTable,coef=1,adjust="BH")
-
-#generate top table of differentially expressed probes
-topTable(fit[[3]],coef="TreatmentsV186",adjust="BH")
-
+topTable(fit2,coef="SD90.3vsMock.3")
 
