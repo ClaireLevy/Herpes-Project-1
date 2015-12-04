@@ -203,53 +203,47 @@ save(expressedProbes.lumi, file="expressedProbes.lumi.Rdata")
 ############### TARGETS AND DESIGN MATRIX ###################
 targets<-pData(expressedProbes.lumi)%>%
   select(TissueID, Treatment,Time)
-#following limma guide
-#pg 51 "multi level experiments". 
-
-#pg51
-# "If we only wanted to compare the two tissue types,
-# we could do a paired samples comparison. If we only
-# wanted to compared diseased to normal, we could do 
-# an ordinary two group comparison. Since we need to 
-# make comparisons both within and between subjects,
-# it is necessary to treat Patient as a random effect. 
-# This can be done in limma using the 
-# duplicateCorrelation function."
-
-#In my exp, Treatment is analogous
-#to "condition" in the example, Time is analogous to Tissue
-# and TissueID is to subject.
+TissueID<- factor(targets$TissueID)
 Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
 
-design<-model.matrix (~0+Treat)
+design<-model.matrix (~0+Treat+TissueID)
 
 #Then we estimate the correlation between
 #measurements made on the same subject
 
-corfit<- duplicateCorrelation(expressedProbes.lumi,design,
-                              block=targets$TissueID)
 
-corfit$consensus
-#[1] 0.03368044
-#I guess this means that there isn't a correlation
-#within the tissueIDs?
-
-#Then this inter-subject correlation is
-#input into the linear model fit
-
-fit <- lmFit(expressedProbes.lumi,design,block=targets$TissueID,
-             correlation=corfit$consensus)
+fit <- lmFit(expressedProbes.lumi,design=design)
 #Now we can make any comparisons
 #between the experimental conditions
-cm<-makeContrasts(
-  SD90.3vsMock.3 = TreatSD90.3-TreatMock.3,
+V186cm<-makeContrasts(
   V186.3vsMock.3 = TreatV186.3-TreatMock.3,
+  V186.8vsMock.8 = TreatV186.3-TreatMock.8,
+  V186.24vsMock.24 = TreatV186.24-TreatMock.24,
   levels = design
 )
-
-fit2<-contrasts.fit(fit,cm)
+fit2<-contrasts.fit(fit,V186cm)
 
 fit2 <-eBayes(fit2)
 
-topTable(fit2,coef="SD90.3vsMock.3")
+results<-decideTests(fit2, adjust.method="BH",p.value=0.05)
+vennDiagram(results)
+
+SD90cm<-makeContrasts(
+SD90.3vsMock.3 = TreatSD90.3-TreatMock.3,
+SD90.8vsMock.8 = TreatSD90.8-TreatMock.8,
+SD90.24vsMock.24 = TreatSD90.24-TreatMock.24,
+levels=design)
+
+fit2<-contrasts.fit(fit,SD90cm)
+
+fit2 <-eBayes(fit2)
+
+results<-decideTests(fit2, adjust.method="BH",p.value=0.05)
+vennDiagram(results)
+
+# If topTable is called and coef has two or more elements,
+# then the specified columns will be extracted from fit and
+# topTableF called on the result. topTable with coef=NULL is 
+# the same as topTableF, unless the fitted model fit has only
+# one column.
 
