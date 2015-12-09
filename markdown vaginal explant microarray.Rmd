@@ -1,10 +1,13 @@
-#Started 13Nov15 CL
 
+
+"Vaginal explant herpes infection experiment"
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 require(dplyr)
 require(lumi)
 require(limma)
 
-#############READ IN RAW MICROARRAY DATA FINAL REPORT ###########
+#READ IN RAW MICROARRAY DATA FINAL REPORT #######
 #data from shared resources
 
 RAW<-"J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/Illumina/2015_11_10/GenomeStudioProject/SeanHughes_HumanHT12v4_151112/2015.11.12smhughesFinalReport.txt"
@@ -21,22 +24,21 @@ RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = 
                 verbose = TRUE)
 
 load("RAW.lumi.Rdata")
+```
 
-##########################EXPERIMENT NOTES ###########################
-#6 samples failed when the microarray was run 6,33,34,35,45,63
-#and two failed QC (36,64). The failed were left out of the finalReport file
-#that we got from shared resources and we will leave all 8 out
-#of the analysis too.
+EXPERIMENT NOTES 
+6 samples failed when the microarray was run 6,33,34,35,45,63
+and two failed QC (36,64). The failed were left out of the finalReport filethat we got from shared resources and we will leave all 8 out of the analysis too.
 
-#ALSO
+ALSO
 
-#The first 5 samples in the micrarray data are T cells that 
-#were exposed to Tenofovir. These will be analyzed separately and
-#can be separated from the vaginal explant data.
-###################################################################
+The first 5 samples in the micrarray data are T cells that 
+were exposed to Tenofovir. These will be analyzed separately and
+can be separated from the vaginal explant data.
 
 
-################## SUBSETTING THE LUMIBATCH ######################
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+########### SUBSETTING THE LUMIBATCH ######################
 
 #subset the lumibatch to remove the non-explant data AND the two samples
 #that were left in the finalReport but failed the QC
@@ -107,9 +109,10 @@ complete.RAW.lumi<-new("LumiBatch", exprs=exprs(RAW.lumi),phenoData=adf,
                   detection=detection(RAW.lumi))
 
 save(complete.RAW.lumi,file="complete.RAW.lumi.Rdata")
-
-######### SOME PLOTS OF NON NORMALIZED DATA ############
-
+```
+ SOME PLOTS OF NON NORMALIZED DATA:
+ density plot, cdf plot
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #density plot
 density(complete.RAW.lumi)#number of probes for each sample that occur
 #at a certain log2 intensity
@@ -122,7 +125,8 @@ plot(complete.RAW.lumi, what='sampleRelation',method="mds")
 
 #boxplot
 boxplot(complete.RAW.lumi)
-###################BACKGROUND CORRECTION ###########################
+
+###################BACKGROUND CORRECTION ####################
 #the data we got from the core had no background correction so I will do it here
 
 B.complete.RAW.lumi<-lumiB(complete.RAW.lumi)
@@ -141,30 +145,29 @@ NTB.complete.RAW.lumi<-lumiN(TB.complete.RAW.lumi,method="rsn")
 ################# QUALITY CONTROL ############################
 
 QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
-summary(QNTB.complete.RAW.lumi, "QC")
 
 save(QNTB.complete.RAW.lumi, file = "QNTB.complete.RAW.lumi.Rdata")
+```
+PLOTS OF NORMALIZED DATA 
 
-################ PLOTS OF NORMALIZED DATA ###############
-
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 plot(QNTB.complete.RAW.lumi)
 
 plot(QNTB.complete.RAW.lumi, what='sampleRelation',method="mds")
 
 boxplot(QNTB.complete.RAW.lumi)
 
+```
+FILTERING PROBES BASED ON DETECTION 
+ Limma suggests to keep probes that are expressed above bg on 
+at least n arrays where n is smallest number of replicates assigned
+to any of the treatment combinations.
 
-################# FILTERING PROBES BASED ON DETECTION ##################
+Our treatment combinations are TissueID/Treatment/Time
+We have 7 Tissue IDs x 3 Treatments x 3 time points=63 so the smallest number
+ of replicates possible for any of those 63 arrays is 7
 
-# Limma suggest to keep probes that are expressed above bg on 
-#at least n arrays where n is smallest number of replicates assigned
-#to any of the treatment combinations.
-
-#Our treatment combinations are TissueID/Treatment/Time
-#We have 7 Tissue IDs x 3 Treatments x 3 time points=63 so the smallest number
-# of replicates possible for any of those 63 arrays is 7??
-
-
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #this is how the detection filtering works
 #Mark the detection pvalues (there is one per probe per sample) with a 1 if <0.05 or a 0 if >0.05
 # using (detection(QNTB.complete.RAW.lumi)<0.05)
@@ -183,13 +186,16 @@ detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=7
 #now extract just those probes that are TRUE from the lumibatch
 
 expressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
+```
 
-#how many probes did we have before filtering?
+how many probes did we have before and after filtering?
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)#47323
 
 dims(expressedProbes.lumi)#21726
-
-#how many removed?
+```
+how many removed?
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
 
 save(expressedProbes.lumi, file="expressedProbes.lumi.Rdata")
@@ -228,8 +234,6 @@ bothcm<-makeContrasts(
 )
 
 
-
-
 #fit the contrasts  
 fit2<-contrasts.fit(bothcm, fit=fit)
 
@@ -238,7 +242,10 @@ fit2<-contrasts.fit(bothcm, fit=fit)
 fit2 <-eBayes(fit2)
 
 
-#which probes are up and down regulated for each contrast?
+```
+
+How many probes are up and down regulated for each contrast?
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 #method=separate is same as doing topTable for all coefs separately
 results<-decideTests(fit2,method="separate", adjust.method="BH",
@@ -261,3 +268,52 @@ resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
 summary<-resultsDFmelt %>%
   group_by(variable)%>%
  summarize(down=sum(value=="-1"),up=sum(value=="1"))
+summary
+
+
+## topTable and heat maps of probes with 
+#adj p values <0.05 and lfc >=0.5
+
+tt<-topTable(fit2,coef=1, adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
+
+selected<-rownames(tt)
+
+esetSel<-expressedProbes.lumi[selected,]
+
+heatmap(exprs(esetSel))
+
+#looking and # of sig probes with different p val limits
+x<- log10(tt$adj.P.Val)
+
+plot(x, type="l")
+sigline <- c(.05, .01, .005, .001,.0005, .0001)
+sigline <- log10(sigline)
+sigcolors <- c("red", "blue", "green", "yellow","pink","purple")
+sapply(1:length(sigline), function(x){abline(h=sigline[x], col=sigcolors[x])})
+
+```
+Looks like there would still be a lot (hundreds)of DE probes for the v186 24hr comparison if reduced the adj p val cutoff to 0.01, but that would reduce the # of DE probes in the v186.3 to ~2 and v186.8 to ~3. The SD90.3 would be 2 and SD90.8 and .24 were already zero with p<=0.05
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#getting some go terms
+
+#add entrez ids to the melted p val and lfc filtered df
+ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
+
+interestingProbes<-merge(resultsDFmelt,ProbeIDandSymbol, by="ProbeID")
+#remove the unchanged probes
+interestingProbes<-filter(interestingProbes, value!="0")
+
+save(interestingProbes,file="interestingProbes.Rdata")
+
+contrastList<-list(levels(resultsDFmelt$variable))
+
+library(stringr)
+get
+str_detect_all(resultsDFmelt$variable,contrast
+
+
+
+
+library(illuminaHumanv4.db)
+library(biomaRt)
