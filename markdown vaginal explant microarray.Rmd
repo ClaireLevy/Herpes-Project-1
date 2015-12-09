@@ -295,25 +295,83 @@ sapply(1:length(sigline), function(x){abline(h=sigline[x], col=sigcolors[x])})
 Looks like there would still be a lot (hundreds)of DE probes for the v186 24hr comparison if reduced the adj p val cutoff to 0.01, but that would reduce the # of DE probes in the v186.3 to ~2 and v186.8 to ~3. The SD90.3 would be 2 and SD90.8 and .24 were already zero with p<=0.05
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
-#getting some go terms
+
+
+
+##### CHECKING SYMBOLS AND PROBE IDS #############
 
 #add entrez ids to the melted p val and lfc filtered df
 ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
 
 interestingProbes<-merge(resultsDFmelt,ProbeIDandSymbol, by="ProbeID")
+
 #remove the unchanged probes
 interestingProbes<-filter(interestingProbes, value!="0")
 
-save(interestingProbes,file="interestingProbes.Rdata")
+#Here are the probes that don't have any coresp. entrez ID and, except for 1, have no symbol
+#notice use of which() here
+noEntrez<-interestingProbes [which (is.na (interestingProbes$ENTREZ_GENE_ID)), ]
 
-contrastList<-list(levels(resultsDFmelt$variable))
+#they are all v186.24 except 1  that is V186.3
+#there is 1 that has no entrez but does have a symbol, which is weird.
+#apparantly it should be entrez ID 7316 http://www.genecards.org/cgi-bin/carddisp.pl?gene=UBC
 
-library(stringr)
-get
-str_detect_all(resultsDFmelt$variable,contrast
 
+#checking the fData for that one...
+fData (RAW.lumi) [ fData(RAW.lumi)$ProbeID == "1430239", ]
+
+#adding in that missing Entrez ID
+
+interestingProbes$ENTREZ_GENE_ID <- ifelse (interestingProbes$SYMBOL=="UBC","7316",interestingProbes$ENTREZ_GENE_ID)
+
+#vector of interesting probes that HAVE entrez ids
+withEntrez<-interestingProbes [! (is.na(interestingProbes$ENTREZ_GENE_ID)), ]
+  
+
+
+#checking the symbols for out-of-dateness and other unusual behaviors
+library(HGNChelper)
+
+geneCheck<-checkGeneSymbols(withEntrez$SYMBOL)
+names(geneCheck)[1]<-"SYMBOL"
+
+
+CheckedwithEntrez<-merge(geneCheck,withEntrez,by="SYMBOL")\
+
+#many of these have no suggested symbol, they are mostly all LOC genes
+noSuggested<-CheckedwithEntrez[which(is.na(CheckedwithEntrez$Suggested.Symbol)),]
+
+#NCBI says:
+# Symbols beginning with LOC. When a published symbol is not available, and orthologs have not yet been determined, #Gene will provide a symbol that is constructed as 'LOC' + the GeneID. This is not retained when a replacement symbol #has been identified, although queries by the LOC term are still supported. In other words, a record with the symbol #LOC12345 is equivalent to GeneID = 12345. So if the symbol changes, the record can still be retrieved on the web #using LOC12345 as a query, or from any file using GeneID = 12345.
+
+
+#limiting the vector of interestingProbes to only those with approved symbols
+
+CheckedinterestingProbes <- CheckedwithEntrez[!(is.na(CheckedwithEntrez$Suggested.Symbol)),]
+
+
+#just looking at the upreg probes for the first contrast
+
+#THERES AN na ON THE END OF THIS VECTOR, DONT KNOW WHY
+
+UPV186.3vsMock.3<-interestingProbes%>%
+  filter(value=="1",variable=="V186.3vsMock.3")%>%
+  dplyr::select(ENTREZ_GENE_ID)
 
 
 
 library(illuminaHumanv4.db)
 library(biomaRt)
+
+#this command that I've used before isn't working, apparently the normal server is down??
+#ensembl<-useMart("ensembl",dataset="hsapiens_gene_ensembl")
+# I got the working command below from here :https://support.bioconductor.org/p/74304/
+
+ensembl <-useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl", host = "jul2015.archive.ensembl.org")
+
+save(ensembl, file="ensembl09Dec15.Rdata")
+
+goids<-getBM(attributes=c("entrezgene","go_id","name_1006"),
+             filters = "entrezgene",values=UPV186.3vsMock.3,
+             mart = ensembl)
+
