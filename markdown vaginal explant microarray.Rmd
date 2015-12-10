@@ -245,6 +245,7 @@ fit2 <-eBayes(fit2)
 ```
 
 How many probes are up and down regulated for each contrast?
+
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 #method=separate is same as doing topTable for all coefs separately
@@ -260,8 +261,9 @@ rownames(resultsDF)<-NULL
 
 #melt the df for easy summarizing
 library(reshape2)
-resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
 
+resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
+save(resultsDFmelt,file = "resultsDFmelt.Rdata")
 #number of up and down regulated probes based on 
 #p.val at least 0.05 and lfc at least 0.5
 
@@ -269,18 +271,28 @@ summary<-resultsDFmelt %>%
   group_by(variable)%>%
  summarize(down=sum(value=="-1"),up=sum(value=="1"))
 summary
+save(summary, file = "summary.Rdata")
 
+############### TOP TABLE AND HEAT MAP CONTRAST1 #############
 
-## topTable and heat maps of probes with 
 #adj p values <0.05 and lfc >=0.5
 
-tt<-topTable(fit2,coef=1, adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
+tt<-topTable(fit2,coef=4, adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
-selected<-rownames(tt)
+selected<-rownames(tt) #selecting the probes of interest
 
-esetSel<-expressedProbes.lumi[selected,]
+#from the expressedProbes.lumi batch, select just the samples #corresponding to coef1 (time=24, treatment not SD90) 
+esetSel<-expressedProbes.lumi[selected,targets$Time=="3"& targets$Treatment !="V186" ]
+
+
+#To have informative names along the bottom of the heatmap,replace #the true Sample Names(numbers)with their corresponding treatment.
+#i.e. look at the rownames in expressedProbes.lumi that match the #colnames in exprs and provide the value for Treatment in those
+#rows. Set that as the new colnames
+colnames(exprs(esetSel))<-pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"]
 
 heatmap(exprs(esetSel))
+
+##############################################################
 
 #looking and # of sig probes with different p val limits
 x<- log10(tt$adj.P.Val)
@@ -302,8 +314,11 @@ Looks like there would still be a lot (hundreds)of DE probes for the v186 24hr c
 
 #add entrez ids to the melted p val and lfc filtered df
 ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
+save(ProbeIDandSymbol,file="ProbeIDandSymbol.Rdata")
 
-interestingProbes<-merge(resultsDFmelt,ProbeIDandSymbol, by="ProbeID")
+
+interestingProbes<-merge(resultsDFmelt,ProbeIDandSymbol,
+                         by="ProbeID")
 
 #remove the unchanged probes
 interestingProbes<-filter(interestingProbes, value!="0")
@@ -324,38 +339,29 @@ fData (RAW.lumi) [ fData(RAW.lumi)$ProbeID == "1430239", ]
 
 interestingProbes$ENTREZ_GENE_ID <- ifelse (interestingProbes$SYMBOL=="UBC","7316",interestingProbes$ENTREZ_GENE_ID)
 
+
 #vector of interesting probes that HAVE entrez ids
-withEntrez<-interestingProbes [! (is.na(interestingProbes$ENTREZ_GENE_ID)), ]
+interestingProbes<-interestingProbes [! (is.na(interestingProbes$ENTREZ_GENE_ID)), ]
   
+getProbes<-function(contrast,direction){
+  interestingProbes[ interestingProbes$variable == "contrast" & interestingProbes$value == "direction", interestingProbes$ENTREZ_GENE_ID]
+}
+lapply(contrastList,FUN=getProbes)
+contrastList<-levels(interestingProbes$variable)
+directionList<-list(1,-1)
 
 
-#checking the symbols for out-of-dateness and other unusual behaviors
-library(HGNChelper)
-
-geneCheck<-checkGeneSymbols(withEntrez$SYMBOL)
-names(geneCheck)[1]<-"SYMBOL"
-
-
-CheckedwithEntrez<-merge(geneCheck,withEntrez,by="SYMBOL")\
-
-#many of these have no suggested symbol, they are mostly all LOC genes
-noSuggested<-CheckedwithEntrez[which(is.na(CheckedwithEntrez$Suggested.Symbol)),]
-
-#NCBI says:
-# Symbols beginning with LOC. When a published symbol is not available, and orthologs have not yet been determined, #Gene will provide a symbol that is constructed as 'LOC' + the GeneID. This is not retained when a replacement symbol #has been identified, although queries by the LOC term are still supported. In other words, a record with the symbol #LOC12345 is equivalent to GeneID = 12345. So if the symbol changes, the record can still be retrieved on the web #using LOC12345 as a query, or from any file using GeneID = 12345.
-
-
-#limiting the vector of interestingProbes to only those with approved symbols
-
-CheckedinterestingProbes <- CheckedwithEntrez[!(is.na(CheckedwithEntrez$Suggested.Symbol)),]
-
+t<-mapply(contrastList,directionList, FUN=getProbes)
 
 #just looking at the upreg probes for the first contrast
 
-#THERES AN na ON THE END OF THIS VECTOR, DONT KNOW WHY
-
 UPV186.3vsMock.3<-interestingProbes%>%
   filter(value=="1",variable=="V186.3vsMock.3")%>%
+  dplyr::select(ENTREZ_GENE_ID)
+
+
+DOWNV186.3vsMock.3<-interestingProbes%>%
+  filter(value=="-1",variable=="V186.3vsMock.3")%>%
   dplyr::select(ENTREZ_GENE_ID)
 
 
@@ -371,7 +377,11 @@ ensembl <-useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensemb
 
 save(ensembl, file="ensembl09Dec15.Rdata")
 
-goids<-getBM(attributes=c("entrezgene","go_id","name_1006"),
+GoUpV186.3<-getBM(attributes=c("entrezgene","go_id","name_1006"),
              filters = "entrezgene",values=UPV186.3vsMock.3,
+             mart = ensembl)
+
+GoDOWNV186.3<-getBM(attributes=c("entrezgene","go_id","name_1006"),
+             filters = "entrezgene",values=DOWNV186.3vsMock.3,
              mart = ensembl)
 
