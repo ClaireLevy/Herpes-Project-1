@@ -26,7 +26,7 @@ RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = 
                 inputAnnotation=TRUE,
                 annotationColumn=c('ILMN_GENE', 'ENTREZ_GENE_ID', 'GI', 'ACCESSION', 'SYMBOL', 'PROBE_ID', 'PROBE_START', 'PROBE_SEQUENCE', 'CHROMOSOME', 'PROBE_CHR_ORIENTATION', 'PROBE_COORDINATES'),
                 verbose = TRUE)
-
+save(RAW.lumi, file="RAW.lumi.Rdata")
 ```
 
 EXPERIMENT NOTES 
@@ -202,7 +202,10 @@ how many removed?
 dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
 
 save(expressedProbes.lumi, file="expressedProbes.lumi.Rdata")
+```
+Here's the design matrix for the analysis
 
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ############### TARGETS AND DESIGN MATRIX ###################
 # see section 9.4.1 and 9.4.2 in the limma users guide
 
@@ -212,10 +215,14 @@ TissueID<- factor(targets$TissueID)
 Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
 
 design<-model.matrix (~0+Treat+TissueID)
+design
+```
+Here's the contrasts matrix
 
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ####################### FIT MODEL TO PROBES ###################
 fit <- lmFit(expressedProbes.lumi,design=design)
-
+save(fit, file="fit.Rdata")
 
 #Now we can make any comparisons
 #between the experimental conditions
@@ -236,6 +243,7 @@ bothcm<-makeContrasts(
   levels=design
 )
 
+bothcm
 
 #fit the contrasts  
 fit2<-contrasts.fit(bothcm, fit=fit)
@@ -244,7 +252,7 @@ fit2<-contrasts.fit(bothcm, fit=fit)
 #compute diff exprsn
 fit2 <-eBayes(fit2)
 
-
+save(fit2, file= "fit2eBayes.Rdata")
 ```
 
 How many probes are up and down regulated for each contrast?
@@ -254,6 +262,8 @@ How many probes are up and down regulated for each contrast?
 #method=separate is same as doing topTable for all coefs separately
 results<-decideTests(fit2,method="separate", adjust.method="BH",
                       p.value=0.05, lfc=0.5)
+
+save(results, file= "decideTestsResults.Rdata")
 
 #turn the results matrix into a data frame and make the
 #probeID a real column and remove the rownames
@@ -275,6 +285,62 @@ summary<-resultsDFmelt %>%
  summarize(down=sum(value=="-1"),up=sum(value=="1"))
 summary
 save(summary, file = "summary.Rdata")
+
+
+
+##### CHECKING SYMBOLS AND PROBE IDS #############
+
+#add entrez ids to the melted p val and lfc filtered df
+ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
+save(ProbeIDandSymbol,file="ProbeIDandSymbol.Rdata")
+
+#merge the melted results matrix with the entrez ids
+interestingProbes<-merge(resultsDFmelt,ProbeIDandSymbol,
+                         by="ProbeID")
+
+#remove the unchanged probes
+interestingProbes<-filter(interestingProbes, value!="0")
+
+#Here are the probes that don't have any coresp. entrez ID and, except for 1, have no symbol
+#notice use of which() here
+noEntrez<-interestingProbes [which (is.na (interestingProbes$ENTREZ_GENE_ID)), ]
+
+#they are all v186.24 except 1  that is V186.3
+#there is 1 that has no entrez but does have a symbol, which is weird.
+#apparantly it should be entrez ID 7316 http://www.genecards.org/cgi-bin/carddisp.pl?gene=UBC
+
+
+#checking the fData for that one...
+x<-fData (RAW.lumi) [ fData(RAW.lumi)$ProbeID == "1430239", ]
+
+#adding in that missing Entrez ID
+
+interestingProbes$ENTREZ_GENE_ID <- ifelse (interestingProbes$SYMBOL=="UBC","7316",interestingProbes$ENTREZ_GENE_ID)
+
+
+#vector of interesting probes that HAVE entrez ids
+interestingProbes<-interestingProbes [! (is.na(interestingProbes$ENTREZ_GENE_ID)), ]
+  
+
+#function to extract the up and down regulated probes for each contrast with the entrez IDs
+getProbes<-function(contrast,direction){
+  interestingProbes[ interestingProbes$variable == contrast & interestingProbes$value ==  direction,
+                     "ENTREZ_GENE_ID"]
+}
+
+#list of contrasts to pass to getProbes function
+contrastList<-levels(interestingProbes$variable)
+
+#down regulated probes
+DownRegProbes<-lapply(contrastList, FUN=getProbes,"-1")
+
+names(DownRegProbes)<-levels(interestingProbes$variable)
+
+#upregulatedProbes
+UpRegProbes<-lapply(contrastList, FUN=getProbes,"1")
+
+names(UpRegProbes)<-levels(interestingProbes$variable)
+
 ```
 
 Heatmaps of the first 4 contrasts: V186 vs mock at 3hr, 8hr, and 24 hrs, SD90 vs Mock at 3 hrs
@@ -293,11 +359,14 @@ selected1<-rownames(tt1) #selecting the probes of interest
 esetSel1<-expressedProbes.lumi[selected1,targets$Time=="3"& targets$Treatment !="SD90" ]
 
 #To have informative names along the bottom of the heatmap,replace #the true Sample Names(numbers)with their corresponding treatment.
-#i.e. look at the rownames in expressedProbes.lumi that match the #colnames in exprs and provide the value for Treatment in those
-#rows. Set that as the new colnames
+#i.e. look at the rows in expressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
+
 colnames(exprs(esetSel1))<-pData(expressedProbes.lumi)[colnames(esetSel1),"Treatment"]
 
 heatmap(exprs(esetSel1))
+
+
+
 
 #repeat for coefs 2
 tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
@@ -322,6 +391,21 @@ colnames(exprs(esetSel3))<-pData(expressedProbes.lumi)[colnames(esetSel3),"Treat
 
 heatmap(exprs(esetSel3))
 
+
+
+#making another heatmap with the same probes but using exprs
+#data from SD90.24. So using "selected1" but different Time and #Treatment to see if there is a similar pattern (even though there weren't a lot of sig probes for those conditions)
+
+esetSel<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !="V186" ]
+
+colnames(exprs(esetSel))<-pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"]
+
+heatmap(exprs(esetSel))
+#NOPE
+
+
+
+
 #and coef4
 tt4<-topTable(fit2,coef="SD90.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -332,8 +416,39 @@ esetSel4<-expressedProbes.lumi[selected4,targets$Time=="3"& targets$Treatment !=
 colnames(exprs(esetSel4))<-pData(expressedProbes.lumi)[colnames(esetSel4),"Treatment"]
 
 heatmap(exprs(esetSel4))
+################# PREPARING DATA FOR INNATE DB ##############
+
+#innate db pathway analysis requires probes ids, log fold changes and expression pvalues. 
+
+#I will extract those for V186.24vsMock.24 (contrast3)from 
+#the toptable that I made above (tt3) and exclude any probes
+#witout entrez ids
 
 
+V186.24ForIDB<-tt3%>%
+  select(logFC,adj.P.Val)
+ 
+V186.24ForIDB$ProbeID<-rownames(V186.24ForIDB)
+
+rownames(V186.24ForIDB$ProbeID)<-NULL
+
+V186.24ForIDB<-merge(ProbeIDandSymbol,V186.24ForIDB, by = "ProbeID")
+
+V186.24ForIDBUP<-V186.24ForIDB%>%
+  select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
+  filter(logFC>0)
+
+write.table(V186.24ForIDBUP, file="V186.24ForIDBUP.txt",
+            sep="\t", row.names = FALSE)
+
+##I put the above file into innateDB with the "subset of genes", "hypergeometric" and "no correction" options for the pathway ORA.
+
+V186.24ForIDBDOWN<-V186.24ForIDB%>%
+  select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
+  filter(logFC<0)
+
+write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
+            sep="\t", row.names = FALSE)
 ##############################################################
 
 #looking and # of sig probes with different p val limits
@@ -352,72 +467,8 @@ Looks like there would still be a lot (hundreds)of DE probes for the v186 24hr c
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
+#for innateDB
+DownV186.24<-as.numeric(DownRegProbes[[3]])
+write.table(DownV186.24, "DownV186.24.txt", sep="\t", row.names = FALSE)
 
-
-##### CHECKING SYMBOLS AND PROBE IDS #############
-
-#add entrez ids to the melted p val and lfc filtered df
-ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
-save(ProbeIDandSymbol,file="ProbeIDandSymbol.Rdata")
-
-
-interestingProbes<-merge(resultsDFmelt,ProbeIDandSymbol,
-                         by="ProbeID")
-
-#remove the unchanged probes
-interestingProbes<-filter(interestingProbes, value!="0")
-
-#Here are the probes that don't have any coresp. entrez ID and, except for 1, have no symbol
-#notice use of which() here
-noEntrez<-interestingProbes [which (is.na (interestingProbes$ENTREZ_GENE_ID)), ]
-
-#they are all v186.24 except 1  that is V186.3
-#there is 1 that has no entrez but does have a symbol, which is weird.
-#apparantly it should be entrez ID 7316 http://www.genecards.org/cgi-bin/carddisp.pl?gene=UBC
-
-
-#checking the fData for that one...
-fData (RAW.lumi) [ fData(RAW.lumi)$ProbeID == "1430239", ]
-
-#adding in that missing Entrez ID
-
-interestingProbes$ENTREZ_GENE_ID <- ifelse (interestingProbes$SYMBOL=="UBC","7316",interestingProbes$ENTREZ_GENE_ID)
-
-
-#vector of interesting probes that HAVE entrez ids
-interestingProbes<-interestingProbes [! (is.na(interestingProbes$ENTREZ_GENE_ID)), ]
-  
-
-#function to extract the up and down regulated probes for each
-#contrast
-getProbes<-function(contrast,direction){
-  interestingProbes[ interestingProbes$variable == contrast & interestingProbes$value ==  direction,
-                     "ENTREZ_GENE_ID"]
-}
-
-#list of contrasts to pass to getProbes function
-contrastList<-levels(interestingProbes$variable)
-
-#down regulated probes
-DownRegProbes<-lapply(contrastList, FUN=getProbes,"-1")
-
-names(DownRegProbes)<-levels(interestingProbes$variable)
-
-#upregulatedProbes
-UpRegProbes<-lapply(contrastList, FUN=getProbes,"1")
-
-names(UpRegProbes)<-levels(interestingProbes$variable)
-
-library(illuminaHumanv4.db)
-library(biomaRt)
-
-#this command that I've used before isn't working, apparently the normal server is down??
-#ensembl<-useMart("ensembl",dataset="hsapiens_gene_ensembl")
-# I got the working command below from here :https://support.bioconductor.org/p/74304/
-
-ensembl <-useMart(biomart = "ENSEMBL_MART_ENSEMBL",dataset="hsapiens_gene_ensembl", host = "jul2015.archive.ensembl.org")
-
-save(ensembl, file="ensembl09Dec15.Rdata")
-
-
-
+sessionInfo()
