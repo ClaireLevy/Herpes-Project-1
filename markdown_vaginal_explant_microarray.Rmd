@@ -343,7 +343,7 @@ names(UpRegProbes)<-levels(interestingProbes$variable)
 
 ```
 
-Heatmaps of the first 4 contrasts: V186 vs mock at 3hr, 8hr, and 24 hrs, SD90 vs Mock at 3 hrs
+Heatmaps of the first 4 contrasts: V186 vs mock at 3hr, 8hr, and 24 hrs, SD90 vs Mock at 3 hrs. Last plot is of the same probes found to be DE in V186.24vsMock but looking at their expression in the SD90.24vsMock condition, just to see if there is a similar pattern.
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ############### TOP TABLE AND HEAT MAPS #############
@@ -392,20 +392,6 @@ colnames(exprs(esetSel3))<-pData(expressedProbes.lumi)[colnames(esetSel3),"Treat
 heatmap(exprs(esetSel3))
 
 
-
-#making another heatmap with the same probes but using exprs
-#data from SD90.24. So using "selected1" but different Time and #Treatment to see if there is a similar pattern (even though there weren't a lot of sig probes for those conditions)
-
-esetSel<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !="V186" ]
-
-colnames(exprs(esetSel))<-pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"]
-
-heatmap(exprs(esetSel))
-#NOPE
-
-
-
-
 #and coef4
 tt4<-topTable(fit2,coef="SD90.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -416,6 +402,18 @@ esetSel4<-expressedProbes.lumi[selected4,targets$Time=="3"& targets$Treatment !=
 colnames(exprs(esetSel4))<-pData(expressedProbes.lumi)[colnames(esetSel4),"Treatment"]
 
 heatmap(exprs(esetSel4))
+
+
+
+#making another heatmap with the same probes but using exprs
+#data from SD90.24. So using "selected1" but different Time and #Treatment to see if there is a similar pattern (even though there weren't a lot of sig probes for those conditions)
+
+esetSel<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !="V186" ]
+
+colnames(exprs(esetSel))<-pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"]
+
+heatmap(exprs(esetSel))
+#NOPE
 ################# PREPARING DATA FOR INNATE DB ##############
 
 #innate db pathway analysis requires probes ids, log fold changes and expression pvalues. 
@@ -464,6 +462,10 @@ sapply(1:length(sigline), function(x){abline(h=sigline[x], col=sigcolors[x])})
 
 ```
 Looks like there would still be a lot (hundreds)of DE probes for the v186 24hr comparison if reduced the adj p val cutoff to 0.01, but that would reduce the # of DE probes in the v186.3 to ~2 and v186.8 to ~3. The SD90.3 would be 2 and SD90.8 and .24 were already zero with p<=0.05
+
+
+
+SessionInfo()
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
