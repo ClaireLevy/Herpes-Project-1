@@ -28,15 +28,34 @@ RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = 
                 inputAnnotation=TRUE,
                 annotationColumn=c('ILMN_GENE', 'ENTREZ_GENE_ID', 'GI', 'ACCESSION', 'SYMBOL', 'PROBE_ID', 'PROBE_START', 'PROBE_SEQUENCE', 'CHROMOSOME', 'PROBE_CHR_ORIENTATION', 'PROBE_COORDINATES'),
                 verbose = TRUE)
+```
+
+SOME PLOTS OF NON NORMALIZED DATA:
+LMF left sample 3E out of the analysis, but it is still included here.
+ Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs.
+ 
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#density plot
+density(RAW.lumi)
+
+#looking at JUST samples 3E, 6D, 3D
+density(RAW.lumi[,25:27])
+
+#3E doesn't look like an outlier here.
+
+#CDF plot: cumulative probability of having <= a certain log2 intensity
+plotCDF(RAW.lumi)
+
+#sample relations
+plot(RAW.lumi, what='sampleRelation',method="mds")
+
+#boxplot
+boxplot(RAW.lumi)
 
 
-#in the pData file LMF sent ("FROMLMF_SampleTable for #HSV2_HVE.txt"), it says that sample "3e" 
-#(tissueID4, 24hr, V186) was not included in her final analyses #so I am removing it from the lumiBatch here (3E is the 26th column):
-RAW.lumi<-RAW.lumi[,-26]
+#adding in more complete pData that matches my formatting for the #explant data. 
 
-#adding in more complete pData that matches my formatting for the #explant data. Does NOT include data for 3E:
-
-pData<-read.table(".//vaginal_cell_microarray//vaginalCellMicroarrayPhenoData.txt",
+pData <- read.table(".//vaginal_cell_microarray//vaginalCellMicroarrayPhenoData.txt",
                        sep="\t",row.names=1, header=TRUE)
 
 
@@ -55,33 +74,15 @@ experimentData<-new("MIAME",name="Claire Levy",
 
 
 #make a lumiBatch that contains both the raw data we got from
-#shared resources AND the phenoData, metadata and experiment data
-#that I created MINUS the tenofovir data and the failed samples.
+#shared resources AND the phenoData, metadata and experiment data.
+complete.RAW.lumi <- new("LumiBatch", exprs = exprs(RAW.lumi),phenoData = adf,
+                  experimentData = experimentData,
+                  se.exprs = se.exprs(RAW.lumi),
+                  detection = detection(RAW.lumi))
 
-complete.RAW.lumi<-new("LumiBatch", exprs=exprs(RAW.lumi),phenoData=adf,
-                  experimentData=experimentData,
-                  se.exprs=se.exprs(RAW.lumi),
-                  detection=detection(RAW.lumi))
+save(complete.RAW.lumi,file = "CELLScomplete.RAW.lumi.Rdata")
 
 
-save(complete.RAW.lumi,file="CELLScomplete.RAW.lumi.Rdata")
-```
-SOME PLOTS OF NON NORMALIZED DATA:
- Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs.
- 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-#density plot
-density(complete.RAW.lumi)#number of probes for each sample that occur
-#at a certain log2 intensity
-
-#CDF plot: cumulative probability of having <= a certain log2 intensity
-plotCDF(complete.RAW.lumi)
-
-#sample relations
-plot(complete.RAW.lumi, what='sampleRelation',method="mds")
-
-#boxplot
-boxplot(complete.RAW.lumi)
 ###################BACKGROUND CORRECTION ####################
 #the data we got from the core had no background correction when we did the explant experiment so I assume this wasn't corrected either.
 B.complete.RAW.lumi<-lumiB(complete.RAW.lumi)
@@ -103,14 +104,23 @@ QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
 
 save(QNTB.complete.RAW.lumi, file = "CELLSQNTB.complete.RAW.lumi.Rdata")
 ```
-PLOTS OF NORMALIZED DATA 
+
+PLOTS OF NORMALIZED DATA: all data, then just 3E, 6D and 3D
+
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
-plot(QNTB.complete.RAW.lumi)
+
+density(QNTB.complete.RAW.lumi)
+
+density(QNTB.complete.RAW.lumi[,25:27])
 
 plot(QNTB.complete.RAW.lumi, what='sampleRelation',method="mds")
 
+plot(QNTB.complete.RAW.lumi[,25:27], what='sampleRelation',method="mds")
+
 boxplot(QNTB.complete.RAW.lumi)
+
+boxplot(QNTB.complete.RAW.lumi[,25:27])
 ```
 FILTERING PROBES BASED ON DETECTION 
  Limma suggests to keep probes that are expressed above bg on 
