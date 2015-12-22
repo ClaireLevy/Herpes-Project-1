@@ -1,0 +1,228 @@
+
+---
+output:
+  md_document:
+    variant: markdown_github
+---
+
+"Vaginal cell herpes infection experiment"
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+require(dplyr)
+require(lumi)
+require(limma)
+
+#READ IN RAW MICROARRAY DATA FINAL REPORT #######
+#data sent from LMF
+
+RAW<-"J:\\MacLabUsers\\HLADIK SHARED\\Projects\\Herpes study\\Herpes-Project-1\\vaginal_cell_microarray\\Finalreport_HSV2_HVE MA.txt"
+
+RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = '.',
+                parseColumnName = FALSE, checkDupId = FALSE,
+                QC = TRUE,
+                columnNameGrepPattern = list(exprs='AVG_SIGNAL',
+                                                  se.exprs='BEAD_STDERR',
+                                                       detection='Detection Pval',
+                                                       beadNum='Avg_NBEADS'),
+                inputAnnotation=TRUE,
+                annotationColumn=c('ILMN_GENE', 'ENTREZ_GENE_ID', 'GI', 'ACCESSION', 'SYMBOL', 'PROBE_ID', 'PROBE_START', 'PROBE_SEQUENCE', 'CHROMOSOME', 'PROBE_CHR_ORIENTATION', 'PROBE_COORDINATES'),
+                verbose = TRUE)
+
+
+#in the pData file LMF sent ("FROMLMF_SampleTable for #HSV2_HVE.txt"), it says that sample "3e" 
+#(tissueID4, 24hr, V186) was not included in her final analyses #so I am removing it from the lumiBatch here (3E is the 26th column):
+RAW.lumi<-RAW.lumi[,-26]
+
+#adding in more complete pData that matches my formatting for the #explant data. Does NOT include data for 3E:
+
+pData<-read.table(".//vaginal_cell_microarray//vaginalCellMicroarrayPhenoData.txt",
+                       sep="\t",row.names=1, header=TRUE)
+
+
+
+#create metadata df
+metadata<- data.frame(labelDescription = c("PTID","Sampling Time", "Treatment:either a virus strain or Mock."),
+                      row.names=c("TissueID","Time","Treatment"))
+
+
+#combine metadata and pdata into an annotated df
+adf<-new("AnnotatedDataFrame",data=pData,varMetadata=metadata)
+
+#create experiment data
+experimentData<-new("MIAME",name="Claire Levy",
+                    lab="Florian Hladik Lab",title="Vaginal Cell Microarray")
+
+
+#make a lumiBatch that contains both the raw data we got from
+#shared resources AND the phenoData, metadata and experiment data
+#that I created MINUS the tenofovir data and the failed samples.
+
+complete.RAW.lumi<-new("LumiBatch", exprs=exprs(RAW.lumi),phenoData=adf,
+                  experimentData=experimentData,
+                  se.exprs=se.exprs(RAW.lumi),
+                  detection=detection(RAW.lumi))
+
+
+save(complete.RAW.lumi,file="CELLScomplete.RAW.lumi.Rdata")
+```
+SOME PLOTS OF NON NORMALIZED DATA:
+ Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs.
+ 
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#density plot
+density(complete.RAW.lumi)#number of probes for each sample that occur
+#at a certain log2 intensity
+
+#CDF plot: cumulative probability of having <= a certain log2 intensity
+plotCDF(complete.RAW.lumi)
+
+#sample relations
+plot(complete.RAW.lumi, what='sampleRelation',method="mds")
+
+#boxplot
+boxplot(complete.RAW.lumi)
+###################BACKGROUND CORRECTION ####################
+#the data we got from the core had no background correction when we did the explant experiment so I assume this wasn't corrected either.
+B.complete.RAW.lumi<-lumiB(complete.RAW.lumi)
+
+
+#################### VST TRANSFORMATION ######################
+#"Stabilizing the expression variance based on
+#the bead level expression variance and mean relations"
+
+TB.complete.RAW.lumi <-lumiT (B.complete.RAW.lumi)
+
+################## ROBUST SPLINE NORMALIZATION ################
+
+NTB.complete.RAW.lumi<-lumiN(TB.complete.RAW.lumi,method="rsn")
+
+################# QUALITY CONTROL ############################
+
+QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
+
+save(QNTB.complete.RAW.lumi, file = "CELLSQNTB.complete.RAW.lumi.Rdata")
+```
+PLOTS OF NORMALIZED DATA 
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+plot(QNTB.complete.RAW.lumi)
+
+plot(QNTB.complete.RAW.lumi, what='sampleRelation',method="mds")
+
+boxplot(QNTB.complete.RAW.lumi)
+```
+FILTERING PROBES BASED ON DETECTION 
+ Limma suggests to keep probes that are expressed above bg on 
+at least n arrays where n is smallest number of replicates assigned
+to any of the treatment combinations.
+
+Our treatment combinations are TissueID/Treatment/Time
+We have 3 Tissue IDs x 3 Treatments x 3 time points = 27 so the smallest number
+ of replicates possible for any of those 3 arrays is 3
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=3
+
+#now extract just those probes that are TRUE from the lumibatch
+#meaning there were at least 3 samples with detection p-values
+#that were <0.05
+
+expressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
+```
+
+how many probes did we have before and after filtering?
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+dims(QNTB.complete.RAW.lumi)#47323
+
+dims(expressedProbes.lumi)#22894
+```
+how many removed?
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
+
+save(expressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
+```
+Here's the design matrix for the analysis
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+############### TARGETS AND DESIGN MATRIX ###################
+# see section 9.4.1 and 9.4.2 in the limma users guide
+
+targets<-pData(expressedProbes.lumi)%>%
+  select(TissueID, Treatment,Time)
+TissueID<- factor(targets$TissueID)
+Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
+
+design<-model.matrix (~0+Treat+TissueID)
+save(design, file="CELLSdesign.Rdata")
+design
+```
+Here's the contrasts matrix
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+####################### FIT MODEL TO PROBES ###################
+fit <- lmFit(expressedProbes.lumi,design=design)
+save(fit, file="CELLSfit.Rdata")
+
+#Now we can make any comparisons
+#between the experimental conditions
+
+# If topTable is called and coef has two or more elements,
+# then the specified columns will be extracted from fit and
+# topTableF called on the result. topTable with coef=NULL is 
+# the same as topTableF, unless the fitted model fit has only
+# one column.
+
+bothcm<-makeContrasts(
+  V186.3vsMock.3 = TreatV186.3-TreatMock.3,
+  V186.8vsMock.8 = TreatV186.3-TreatMock.8,
+  V186.24vsMock.24 = TreatV186.24-TreatMock.24,
+  SD90.3vsMock.3 = TreatSD90.3-TreatMock.3,
+  SD90.8vsMock.8 = TreatSD90.8-TreatMock.8,
+  SD90.24vsMock.24 = TreatSD90.24-TreatMock.24,
+  levels=design
+)
+
+bothcm
+
+#fit the contrasts  
+fit2<-contrasts.fit(bothcm, fit=fit)
+
+
+#compute diff exprsn
+fit2 <-eBayes(fit2)
+
+save(fit2, file= "CELLSfit2eBayes.Rdata")
+```
+
+How many probes are up and down regulated for each contrast?
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+#method=separate is same as doing topTable for all coefs separately
+results<-decideTests(fit2,method="separate", adjust.method="BH",
+                      p.value=0.05, lfc=0.5)
+
+save(results, file= "CELLSdecideTestsResults.Rdata")
+
+#turn the results matrix into a data frame and make the
+#probeID a real column and remove the rownames
+
+resultsDF<-as.data.frame(results)
+resultsDF$ProbeID<-rownames(resultsDF)
+rownames(resultsDF)<-NULL
+
+#melt the df for easy summarizing
+library(reshape2)
+
+resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
+save(resultsDFmelt,file = "resultsDFmelt.Rdata")
+#number of up and down regulated probes based on 
+#p.val at least 0.05 and lfc at least 0.5
+
+summary<-resultsDFmelt %>%
+  group_by(variable)%>%
+ summarize(down=sum(value=="-1"),up=sum(value=="1"))
+summary
+save(summary, file = "CELLSsummary.Rdata")
