@@ -28,20 +28,22 @@ RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = 
                 inputAnnotation=TRUE,
                 annotationColumn=c('ILMN_GENE', 'ENTREZ_GENE_ID', 'GI', 'ACCESSION', 'SYMBOL', 'PROBE_ID', 'PROBE_START', 'PROBE_SEQUENCE', 'CHROMOSOME', 'PROBE_CHR_ORIENTATION', 'PROBE_COORDINATES'),
                 verbose = TRUE)
+
+
+#Remove sample 3E (column 26) from the data
+RAW.lumi<-RAW.lumi[,-26]
+
 ```
 
 SOME PLOTS OF NON NORMALIZED DATA:
-LMF left sample 3E out of the analysis, but it is still included here.
+LMF left sample 3E out of the analysis because it was determined that there was some kind of pipetting error. FH told me that when he looked at the analyzed data, 3E looked very similar to the SD90 data but very different from the other 2 V186.24 replicates (samples 6D and 3D) so he didn't feel comfortable leaving it in the analysis. I am also leaving it out here.
+
  Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs.
  
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #density plot
 density(RAW.lumi)
 
-#looking at JUST samples 3E, 6D, 3D
-density(RAW.lumi[,25:27])
-
-#3E doesn't look like an outlier here.
 
 #CDF plot: cumulative probability of having <= a certain log2 intensity
 plotCDF(RAW.lumi)
@@ -58,7 +60,7 @@ boxplot(RAW.lumi)
 pData <- read.table("vaginalCellMicroarrayPhenoData.txt",
                        sep="\t",row.names=1, header=TRUE)
 
-
+pData<- pData[-26,] #remove sample 3E from the pData so it will work nicely with the lumiBatch where I did the same
 
 #create metadata df
 metadata<- data.frame(labelDescription = c("PTID","Sampling Time", "Treatment:either a virus strain or Mock."),
@@ -105,22 +107,22 @@ QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
 save(QNTB.complete.RAW.lumi, file = "CELLSQNTB.complete.RAW.lumi.Rdata")
 ```
 
-PLOTS OF NORMALIZED DATA: all data, then just 3E, 6D and 3D
+PLOTS OF NORMALIZED DATA: all data, then just 6D and 3D
 
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 density(QNTB.complete.RAW.lumi)
 
-density(QNTB.complete.RAW.lumi[,25:27])
+
 
 plot(QNTB.complete.RAW.lumi, what='sampleRelation',method="mds")
 
-plot(QNTB.complete.RAW.lumi[,25:27], what='sampleRelation',method="mds")
+
 
 boxplot(QNTB.complete.RAW.lumi)
 
-boxplot(QNTB.complete.RAW.lumi[,25:27])
+
 ```
 FILTERING PROBES BASED ON DETECTION 
  Limma suggests to keep probes that are expressed above bg on 
@@ -132,6 +134,8 @@ We have 3 Tissue IDs x 3 Treatments x 3 time points = 27 so the smallest number
  of replicates possible for any of those 3 arrays is 3
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+
 detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=3
 
 #now extract just those probes that are TRUE from the lumibatch
@@ -147,15 +151,23 @@ dims(QNTB.complete.RAW.lumi)#47323
 
 dims(expressedProbes.lumi)#22894
 ```
-how many removed?
+
+
+How many removed?
+
+
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
 dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
 
 save(expressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
 ```
+
 Here's the design matrix for the analysis
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+
 ############### TARGETS AND DESIGN MATRIX ###################
 # see section 9.4.1 and 9.4.2 in the limma users guide
 
@@ -173,7 +185,10 @@ design
 Here's the contrasts matrix
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+
 ####################### FIT MODEL TO PROBES ###################
+
 fit <- lmFit(expressedProbes.lumi,design=design)
 save(fit, file="CELLSfit.Rdata")
 
@@ -260,6 +275,6 @@ ggplot(meltSummary,aes(x=Time, y = Probes))+
   facet_wrap(~Direction)+
   geom_line(aes(group=Virus, color=Virus))+
   theme(aspect.ratio = 1)+
-  ggtitle("Number of DE probes with all samples included")
+  ggtitle("Number of DE probes (sample 3E excluded)")
 
 
