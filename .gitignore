@@ -4,4 +4,6 @@
 *.Rdata
 *.txt
 *.RProj
+.lnk
+vaginal_explant_Illumina/
 
