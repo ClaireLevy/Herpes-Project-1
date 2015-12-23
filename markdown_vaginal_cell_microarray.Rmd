@@ -39,7 +39,8 @@ RAW.lumi<-RAW.lumi[,-26]
 pData<-read.table(".//vaginal_cell_microarray//vaginalCellMicroarrayPhenoData.txt",
                        sep="\t",row.names=1, header=TRUE)
 
-
+#removing the 3E row from the pData
+pData<-pData[-26,]
 
 #create metadata df
 metadata<- data.frame(labelDescription = c("PTID","Sampling Time", "Treatment:either a virus strain or Mock."),
