@@ -55,7 +55,7 @@ boxplot(RAW.lumi)
 
 #adding in more complete pData that matches my formatting for the #explant data. 
 
-pData <- read.table(".//vaginal_cell_microarray//vaginalCellMicroarrayPhenoData.txt",
+pData <- read.table("vaginalCellMicroarrayPhenoData.txt",
                        sep="\t",row.names=1, header=TRUE)
 
 
