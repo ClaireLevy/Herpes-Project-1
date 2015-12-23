@@ -67,7 +67,7 @@ complete.RAW.lumi<-new("LumiBatch", exprs=exprs(RAW.lumi),phenoData=adf,
 save(complete.RAW.lumi,file="CELLScomplete.RAW.lumi.Rdata")
 ```
 SOME PLOTS OF NON NORMALIZED DATA:
- Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs.
+ Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs. 
  
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #density plot
@@ -83,6 +83,13 @@ plot(complete.RAW.lumi, what='sampleRelation',method="mds")
 #boxplot
 boxplot(complete.RAW.lumi)
 ###################BACKGROUND CORRECTION ####################
+
+#Before correction and normalization I am removing samples 6D and 3D from the data set because they look like the biggest outliers. They are both v186.24. Sample 3E, the 3 replicate of v186.24, is still there.
+
+complete.RAW.lumi <- complete.RAW.lumi [,-c(25,27)]
+
+
+
 #the data we got from the core had no background correction when we did the explant experiment so I assume this wasn't corrected either.
 B.complete.RAW.lumi<-lumiB(complete.RAW.lumi)
 
@@ -135,13 +142,17 @@ how many probes did we have before and after filtering?
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)#47323
 
-dims(expressedProbes.lumi)#22894
+dims(expressedProbes.lumi)
 ```
-how many removed?
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
 
-save(expressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
+
+How many removed?
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)
+
+
 ```
 Here's the design matrix for the analysis
 
@@ -155,7 +166,7 @@ TissueID<- factor(targets$TissueID)
 Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
 
 design<-model.matrix (~0+Treat+TissueID)
-save(design, file="CELLSdesign.Rdata")
+
 design
 ```
 Here's the contrasts matrix
@@ -163,7 +174,6 @@ Here's the contrasts matrix
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ####################### FIT MODEL TO PROBES ###################
 fit <- lmFit(expressedProbes.lumi,design=design)
-save(fit, file="CELLSfit.Rdata")
 
 #Now we can make any comparisons
 #between the experimental conditions
@@ -193,7 +203,7 @@ fit2<-contrasts.fit(bothcm, fit=fit)
 #compute diff exprsn
 fit2 <-eBayes(fit2)
 
-save(fit2, file= "CELLSfit2eBayes.Rdata")
+
 ```
 
 How many probes are up and down regulated for each contrast?
@@ -204,7 +214,7 @@ How many probes are up and down regulated for each contrast?
 results<-decideTests(fit2,method="separate", adjust.method="BH",
                       p.value=0.05, lfc=0.5)
 
-save(results, file= "CELLSdecideTestsResults.Rdata")
+
 
 #turn the results matrix into a data frame and make the
 #probeID a real column and remove the rownames
@@ -217,7 +227,7 @@ rownames(resultsDF)<-NULL
 library(reshape2)
 
 resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
-save(resultsDFmelt,file = "resultsDFmelt.Rdata")
+
 #number of up and down regulated probes based on 
 #p.val at least 0.05 and lfc at least 0.5
 
@@ -225,4 +235,33 @@ summary<-resultsDFmelt %>%
   group_by(variable)%>%
  summarize(down=sum(value=="-1"),up=sum(value=="1"))
 summary
-save(summary, file = "CELLSsummary.Rdata")
+
+library(ggplot2)
+
+meltSummary <- melt(summary)
+
+colnames(meltSummary)<-c("Contrast","Direction","Probes")
+
+
+
+meltSummary <- meltSummary%>%
+  arrange(Contrast)%>%
+  mutate(Virus = c( rep("V186", 6), rep("SD90",6)),
+         Time = as.factor(rep(c(rep("3",2),rep("8",2),rep("24",2)),2)))
+
+meltSummary$Direction <- factor( meltSummary$Direction, levels = c("up","down"))
+
+         
+meltSummary$Time <- factor( meltSummary$Time, levels = c("3","8","24"))
+
+ggplot(meltSummary,aes(x=Time, y = Probes))+
+  geom_point(aes(color = Virus))+
+  facet_wrap(~Direction)+
+  geom_line(aes(group=Virus, color=Virus))+
+  theme(aspect.ratio = 1)+
+  ggtitle("Number of DE probes without 6D and 3D in dataset")
+
+
+```
+
+This is closer to what LMF got with CyberT than when I kept all the samples.
