@@ -167,7 +167,9 @@ Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
 design<-model.matrix (~0+Treat+TissueID)
 save(design, file="CELLSdesign.Rdata")
 design
+
 ```
+
 Here's the contrasts matrix
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
@@ -236,3 +238,28 @@ summary<-resultsDFmelt %>%
  summarize(down=sum(value=="-1"),up=sum(value=="1"))
 summary
 save(summary, file = "CELLSsummary.Rdata")
+
+meltSummary <- melt(summary)
+
+colnames(meltSummary)<-c("Contrast","Direction","Probes")
+
+
+meltSummary <- meltSummary%>%
+  arrange(Contrast)%>%
+  mutate(Virus = c( rep("V186", 6), rep("SD90",6)),
+         Time = as.factor(rep(c(rep("3",2),rep("8",2),rep("24",2)),2)))
+
+meltSummary$Direction <- factor( meltSummary$Direction, levels = c("up","down"))
+
+         
+meltSummary$Time <- factor( meltSummary$Time, levels = c("3","8","24"))
+
+library(ggplot2)
+ggplot(meltSummary,aes(x=Time, y = Probes))+
+  geom_point(aes(color = Virus))+
+  facet_wrap(~Direction)+
+  geom_line(aes(group=Virus, color=Virus))+
+  theme(aspect.ratio = 1)+
+  ggtitle("Number of DE probes with all samples included")
+
+
