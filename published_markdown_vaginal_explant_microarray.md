@@ -1,411 +1,105 @@
 "Vaginal explant herpes infection experiment"
 
-    ## Inputting the data ...
-    ## Perform Quality Control assessment of the LumiBatch object ...
+EXPERIMENT NOTES
 
-EXPERIMENT NOTES 6 samples failed when the microarray was run 6,33,34,35,45,63 and two failed QC (36,64). The failed were left out of the finalReport filethat we got from shared resources and we will leave all 8 out of the analysis too.
+6 samples failed when the microarray was run( 6,33,34,35,45,63) and two failed QC (36,64).
+
+6= One of the T-cell samples, not included in explant study 33=ID326 T1 M 34=ID 326 T2 V1 35=ID 326 T3 V2 36 ID 317 T2 M 45 ID 318 T3 V1 63 ID 327 T2 V1 64 ID 319 T2 M
+
+Samples that failed the finalReport file were not included in the report we got from shared resources and I removed the ones that failed QC.
 
 ALSO
 
-The first 5 samples in the micrarray data are T cells that were exposed to Tenofovir. These will be analyzed separately and can be separated from the vaginal explant data.
+The first 5 samples in the micrarray data are T cells that were exposed to Tenofovir. These will be analyzed separately so I removed them from the data set here.
 
-SOME PLOTS OF NON NORMALIZED DATA: density plot, cdf plot ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-1.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-2.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-3.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-4.png)
+SOME PLOTS OF NON NORMALIZED DATA: density plot, cdf plot, sample relations
 
-    ## Perform vst transformation ...
-    ## 2015-12-21 16:16:28 , processing array  1 
-    ## 2015-12-21 16:16:28 , processing array  2 
-    ## 2015-12-21 16:16:28 , processing array  3 
-    ## 2015-12-21 16:16:28 , processing array  4 
-    ## 2015-12-21 16:16:28 , processing array  5 
-    ## 2015-12-21 16:16:28 , processing array  6 
-    ## 2015-12-21 16:16:28 , processing array  7 
-    ## 2015-12-21 16:16:28 , processing array  8 
-    ## 2015-12-21 16:16:28 , processing array  9 
-    ## 2015-12-21 16:16:28 , processing array  10 
-    ## 2015-12-21 16:16:28 , processing array  11 
-    ## 2015-12-21 16:16:28 , processing array  12 
-    ## 2015-12-21 16:16:28 , processing array  13 
-    ## 2015-12-21 16:16:28 , processing array  14 
-    ## 2015-12-21 16:16:28 , processing array  15 
-    ## 2015-12-21 16:16:28 , processing array  16 
-    ## 2015-12-21 16:16:29 , processing array  17 
-    ## 2015-12-21 16:16:29 , processing array  18 
-    ## 2015-12-21 16:16:29 , processing array  19 
-    ## 2015-12-21 16:16:29 , processing array  20 
-    ## 2015-12-21 16:16:29 , processing array  21 
-    ## 2015-12-21 16:16:29 , processing array  22 
-    ## 2015-12-21 16:16:29 , processing array  23 
-    ## 2015-12-21 16:16:29 , processing array  24 
-    ## 2015-12-21 16:16:29 , processing array  25 
-    ## 2015-12-21 16:16:29 , processing array  26 
-    ## 2015-12-21 16:16:29 , processing array  27 
-    ## 2015-12-21 16:16:29 , processing array  28 
-    ## 2015-12-21 16:16:30 , processing array  29 
-    ## 2015-12-21 16:16:30 , processing array  30 
-    ## 2015-12-21 16:16:30 , processing array  31 
-    ## 2015-12-21 16:16:30 , processing array  32 
-    ## 2015-12-21 16:16:30 , processing array  33 
-    ## 2015-12-21 16:16:30 , processing array  34 
-    ## 2015-12-21 16:16:30 , processing array  35 
-    ## 2015-12-21 16:16:30 , processing array  36 
-    ## 2015-12-21 16:16:30 , processing array  37 
-    ## 2015-12-21 16:16:30 , processing array  38 
-    ## 2015-12-21 16:16:30 , processing array  39 
-    ## 2015-12-21 16:16:30 , processing array  40 
-    ## 2015-12-21 16:16:30 , processing array  41 
-    ## 2015-12-21 16:16:30 , processing array  42 
-    ## 2015-12-21 16:16:30 , processing array  43 
-    ## 2015-12-21 16:16:30 , processing array  44 
-    ## 2015-12-21 16:16:31 , processing array  45 
-    ## 2015-12-21 16:16:31 , processing array  46 
-    ## 2015-12-21 16:16:31 , processing array  47 
-    ## 2015-12-21 16:16:31 , processing array  48 
-    ## 2015-12-21 16:16:31 , processing array  49 
-    ## 2015-12-21 16:16:31 , processing array  50 
-    ## 2015-12-21 16:16:31 , processing array  51 
-    ## 2015-12-21 16:16:31 , processing array  52 
-    ## 2015-12-21 16:16:31 , processing array  53 
-    ## 2015-12-21 16:16:31 , processing array  54 
-    ## 2015-12-21 16:16:31 , processing array  55 
-    ## 2015-12-21 16:16:31 , processing array  56
-
-    ## Perform rsn normalization ...
-    ## 2015-12-21 16:16:33 , processing array  1 
-    ## 2015-12-21 16:16:34 , processing array  2 
-    ## 2015-12-21 16:16:34 , processing array  3 
-    ## 2015-12-21 16:16:34 , processing array  4 
-    ## 2015-12-21 16:16:34 , processing array  5 
-    ## 2015-12-21 16:16:34 , processing array  6 
-    ## 2015-12-21 16:16:34 , processing array  7 
-    ## 2015-12-21 16:16:34 , processing array  8 
-    ## 2015-12-21 16:16:34 , processing array  9 
-    ## 2015-12-21 16:16:35 , processing array  10 
-    ## 2015-12-21 16:16:35 , processing array  11 
-    ## 2015-12-21 16:16:35 , processing array  12 
-    ## 2015-12-21 16:16:35 , processing array  13 
-    ## 2015-12-21 16:16:35 , processing array  14 
-    ## 2015-12-21 16:16:35 , processing array  15 
-    ## 2015-12-21 16:16:35 , processing array  16 
-    ## 2015-12-21 16:16:35 , processing array  17 
-    ## 2015-12-21 16:16:35 , processing array  18 
-    ## 2015-12-21 16:16:35 , processing array  19 
-    ## 2015-12-21 16:16:36 , processing array  20 
-    ## 2015-12-21 16:16:36 , processing array  21 
-    ## 2015-12-21 16:16:36 , processing array  22 
-    ## 2015-12-21 16:16:36 , processing array  23 
-    ## 2015-12-21 16:16:36 , processing array  24 
-    ## 2015-12-21 16:16:36 , processing array  25 
-    ## 2015-12-21 16:16:36 , processing array  26 
-    ## 2015-12-21 16:16:36 , processing array  27 
-    ## 2015-12-21 16:16:36 , processing array  28 
-    ## 2015-12-21 16:16:36 , processing array  29 
-    ## 2015-12-21 16:16:36 , processing array  30 
-    ## 2015-12-21 16:16:37 , processing array  31 
-    ## 2015-12-21 16:16:37 , processing array  32 
-    ## 2015-12-21 16:16:37 , processing array  33 
-    ## 2015-12-21 16:16:37 , processing array  34 
-    ## 2015-12-21 16:16:37 , processing array  35 
-    ## 2015-12-21 16:16:37 , processing array  36 
-    ## 2015-12-21 16:16:37 , processing array  37 
-    ## 2015-12-21 16:16:37 , processing array  38 
-    ## 2015-12-21 16:16:37 , processing array  39 
-    ## 2015-12-21 16:16:37 , processing array  40 
-    ## 2015-12-21 16:16:38 , processing array  41 
-    ## 2015-12-21 16:16:38 , processing array  42 
-    ## 2015-12-21 16:16:38 , processing array  43 
-    ## 2015-12-21 16:16:38 , processing array  44 
-    ## 2015-12-21 16:16:38 , processing array  45 
-    ## 2015-12-21 16:16:38 , processing array  46 
-    ## 2015-12-21 16:16:38 , processing array  47 
-    ## 2015-12-21 16:16:38 , processing array  48 
-    ## 2015-12-21 16:16:38 , processing array  49 
-    ## 2015-12-21 16:16:38 , processing array  50 
-    ## 2015-12-21 16:16:38 , processing array  51 
-    ## 2015-12-21 16:16:38 , processing array  52 
-    ## 2015-12-21 16:16:39 , processing array  53 
-    ## 2015-12-21 16:16:39 , processing array  54 
-    ## 2015-12-21 16:16:39 , processing array  55 
-    ## 2015-12-21 16:16:39 , processing array  56
-
-    ## Perform Quality Control assessment of the LumiBatch object ...
+![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-1.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-2.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-3.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-3-4.png)
 
 PLOTS OF NORMALIZED DATA
 
-![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-4-1.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-4-2.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-4-3.png) FILTERING PROBES BASED ON DETECTION Limma suggests to keep probes that are expressed above bg on at least n arrays where n is smallest number of replicates assigned to any of the treatment combinations.
+![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-5-1.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-5-2.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-5-3.png)
 
-Our treatment combinations are TissueID/Treatment/Time We have 7 Tissue IDs x 3 Treatments x 3 time points=63 so the smallest number of replicates possible for any of those 63 arrays is 7
+FILTERING PROBES Limma suggests to keep probes that are expressed above background on at least n arrays where n is smallest number of replicates assigned to any of the treatment combinations.
 
-how many probes did we have before and after filtering?
+Our treatment combinations are TissueID/Treatment/Time. We have 7 replicates (donors) for each of the treatment combinations so I kept probes with detection levels above background in at least 7 samples.
 
-    ##          detection exprs se.exprs
-    ## Features     47323 47323    47323
-    ## Samples         56    56       56
+Number of probes in data set before filtering:
 
-    ##          detection exprs se.exprs
-    ## Features     27126 27126    27126
-    ## Samples         56    56       56
+    ## [1] 47323
 
-how many removed?
+Number of probes in data set after filtering:
 
-    ##          detection exprs se.exprs
-    ## Features     20197 20197    20197
-    ## Samples          0     0        0
+    ## [1] 27126
 
-Here's the design matrix for the analysis
+Number of probes removed by filtering:
 
-    ##    TreatMock.24 TreatMock.3 TreatMock.8 TreatSD90.24 TreatSD90.3
-    ## 1             0           0           0            0           0
-    ## 2             1           0           0            0           0
-    ## 3             0           0           1            0           0
-    ## 4             1           0           0            0           0
-    ## 5             0           0           0            0           0
-    ## 6             0           0           0            0           0
-    ## 7             0           0           0            0           0
-    ## 8             0           0           0            0           0
-    ## 9             0           1           0            0           0
-    ## 10            0           0           0            0           0
-    ## 11            0           1           0            0           0
-    ## 12            1           0           0            0           0
-    ## 13            0           0           0            0           1
-    ## 14            0           0           0            0           0
-    ## 15            0           0           1            0           0
-    ## 16            1           0           0            0           0
-    ## 17            0           0           0            0           1
-    ## 18            0           0           0            0           0
-    ## 19            0           0           0            0           0
-    ## 20            0           0           0            0           1
-    ## 21            0           0           1            0           0
-    ## 22            0           0           0            1           0
-    ## 23            0           0           0            1           0
-    ## 24            0           1           0            0           0
-    ## 25            0           0           0            0           0
-    ## 26            0           0           0            0           0
-    ## 27            1           0           0            0           0
-    ## 28            1           0           0            0           0
-    ## 29            0           0           0            1           0
-    ## 30            0           1           0            0           0
-    ## 31            0           0           0            1           0
-    ## 32            0           0           1            0           0
-    ## 33            0           0           0            0           0
-    ## 34            0           0           0            0           0
-    ## 35            0           0           0            0           0
-    ## 36            0           0           0            0           0
-    ## 37            0           0           0            0           0
-    ## 38            0           1           0            0           0
-    ## 39            0           0           0            0           0
-    ## 40            0           0           0            0           0
-    ## 41            0           0           0            1           0
-    ## 42            0           0           0            0           1
-    ## 43            0           0           0            0           0
-    ## 44            0           0           0            0           0
-    ## 45            0           0           0            0           0
-    ## 46            0           0           0            1           0
-    ## 47            0           0           0            0           0
-    ## 48            0           1           0            0           0
-    ## 49            1           0           0            0           0
-    ## 50            0           0           0            0           1
-    ## 51            0           0           0            0           0
-    ## 52            0           0           0            0           1
-    ## 53            0           0           0            0           0
-    ## 54            0           0           0            0           0
-    ## 55            0           0           1            0           0
-    ## 56            0           0           0            0           1
-    ##    TreatSD90.8 TreatV186.24 TreatV186.3 TreatV186.8 TissueID318
-    ## 1            0            0           0           1           0
-    ## 2            0            0           0           0           0
-    ## 3            0            0           0           0           0
-    ## 4            0            0           0           0           0
-    ## 5            0            0           0           1           0
-    ## 6            1            0           0           0           0
-    ## 7            0            0           1           0           0
-    ## 8            0            0           0           1           0
-    ## 9            0            0           0           0           0
-    ## 10           0            0           0           1           0
-    ## 11           0            0           0           0           0
-    ## 12           0            0           0           0           0
-    ## 13           0            0           0           0           0
-    ## 14           0            1           0           0           1
-    ## 15           0            0           0           0           0
-    ## 16           0            0           0           0           0
-    ## 17           0            0           0           0           1
-    ## 18           0            1           0           0           0
-    ## 19           0            0           1           0           0
-    ## 20           0            0           0           0           0
-    ## 21           0            0           0           0           0
-    ## 22           0            0           0           0           0
-    ## 23           0            0           0           0           0
-    ## 24           0            0           0           0           1
-    ## 25           0            0           1           0           0
-    ## 26           0            1           0           0           0
-    ## 27           0            0           0           0           0
-    ## 28           0            0           0           0           1
-    ## 29           0            0           0           0           0
-    ## 30           0            0           0           0           0
-    ## 31           0            0           0           0           0
-    ## 32           0            0           0           0           1
-    ## 33           1            0           0           0           0
-    ## 34           0            0           1           0           0
-    ## 35           0            1           0           0           0
-    ## 36           1            0           0           0           0
-    ## 37           0            0           0           1           1
-    ## 38           0            0           0           0           0
-    ## 39           1            0           0           0           1
-    ## 40           0            1           0           0           0
-    ## 41           0            0           0           0           0
-    ## 42           0            0           0           0           0
-    ## 43           0            0           1           0           0
-    ## 44           0            0           0           1           0
-    ## 45           0            0           1           0           1
-    ## 46           0            0           0           0           0
-    ## 47           0            0           0           1           0
-    ## 48           0            0           0           0           0
-    ## 49           0            0           0           0           0
-    ## 50           0            0           0           0           0
-    ## 51           1            0           0           0           0
-    ## 52           0            0           0           0           0
-    ## 53           0            1           0           0           0
-    ## 54           0            0           1           0           0
-    ## 55           0            0           0           0           0
-    ## 56           0            0           0           0           0
-    ##    TissueID319 TissueID323 TissueID324 TissueID326 TissueID327
-    ## 1            0           0           0           0           1
-    ## 2            0           1           0           0           0
-    ## 3            0           0           0           1           0
-    ## 4            0           0           0           0           1
-    ## 5            0           0           0           1           0
-    ## 6            0           1           0           0           0
-    ## 7            0           0           1           0           0
-    ## 8            0           0           0           0           0
-    ## 9            0           0           0           0           1
-    ## 10           0           1           0           0           0
-    ## 11           0           0           1           0           0
-    ## 12           0           0           1           0           0
-    ## 13           0           1           0           0           0
-    ## 14           0           0           0           0           0
-    ## 15           0           0           0           0           1
-    ## 16           1           0           0           0           0
-    ## 17           0           0           0           0           0
-    ## 18           0           0           1           0           0
-    ## 19           0           0           0           1           0
-    ## 20           1           0           0           0           0
-    ## 21           0           1           0           0           0
-    ## 22           0           0           0           0           1
-    ## 23           1           0           0           0           0
-    ## 24           0           0           0           0           0
-    ## 25           0           0           0           0           0
-    ## 26           0           0           0           0           0
-    ## 27           0           0           0           0           0
-    ## 28           0           0           0           0           0
-    ## 29           0           1           0           0           0
-    ## 30           0           0           0           0           0
-    ## 31           0           0           0           0           0
-    ## 32           0           0           0           0           0
-    ## 33           0           0           0           0           0
-    ## 34           0           0           0           0           1
-    ## 35           0           0           0           0           1
-    ## 36           1           0           0           0           0
-    ## 37           0           0           0           0           0
-    ## 38           1           0           0           0           0
-    ## 39           0           0           0           0           0
-    ## 40           1           0           0           0           0
-    ## 41           0           0           1           0           0
-    ## 42           0           0           1           0           0
-    ## 43           0           1           0           0           0
-    ## 44           1           0           0           0           0
-    ## 45           0           0           0           0           0
-    ## 46           0           0           0           1           0
-    ## 47           0           0           1           0           0
-    ## 48           0           1           0           0           0
-    ## 49           0           0           0           1           0
-    ## 50           0           0           0           0           0
-    ## 51           0           0           1           0           0
-    ## 52           0           0           0           0           1
-    ## 53           0           1           0           0           0
-    ## 54           1           0           0           0           0
-    ## 55           0           0           1           0           0
-    ## 56           0           0           0           1           0
-    ## attr(,"assign")
-    ##  [1] 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2
-    ## attr(,"contrasts")
-    ## attr(,"contrasts")$Treat
-    ## [1] "contr.treatment"
-    ## 
-    ## attr(,"contrasts")$TissueID
-    ## [1] "contr.treatment"
+    ## [1] 20197
 
-Here's the contrasts matrix
+The design matrix includes a combined treatment + timepoint parameter('r"Treat"') and a donor parameter ('r "TissueID"').
 
-    ##               Contrasts
-    ## Levels         V186.3vsMock.3 V186.8vsMock.8 V186.24vsMock.24
-    ##   TreatMock.24              0              0               -1
-    ##   TreatMock.3              -1              0                0
-    ##   TreatMock.8               0             -1                0
-    ##   TreatSD90.24              0              0                0
-    ##   TreatSD90.3               0              0                0
-    ##   TreatSD90.8               0              0                0
-    ##   TreatV186.24              0              0                1
-    ##   TreatV186.3               1              1                0
-    ##   TreatV186.8               0              0                0
-    ##   TissueID318               0              0                0
-    ##   TissueID319               0              0                0
-    ##   TissueID323               0              0                0
-    ##   TissueID324               0              0                0
-    ##   TissueID326               0              0                0
-    ##   TissueID327               0              0                0
-    ##               Contrasts
-    ## Levels         SD90.3vsMock.3 SD90.8vsMock.8 SD90.24vsMock.24
-    ##   TreatMock.24              0              0               -1
-    ##   TreatMock.3              -1              0                0
-    ##   TreatMock.8               0             -1                0
-    ##   TreatSD90.24              0              0                1
-    ##   TreatSD90.3               1              0                0
-    ##   TreatSD90.8               0              1                0
-    ##   TreatV186.24              0              0                0
-    ##   TreatV186.3               0              0                0
-    ##   TreatV186.8               0              0                0
-    ##   TissueID318               0              0                0
-    ##   TissueID319               0              0                0
-    ##   TissueID323               0              0                0
-    ##   TissueID324               0              0                0
-    ##   TissueID326               0              0                0
-    ##   TissueID327               0              0                0
+'r design \<-(~0+Treat+TissueID)'
 
-How many probes are up and down regulated for each contrast?
+Then we choose the comparisons we want to analyze. I will compare treatment + timepoint condition with the corresponding mock infection in the same donor. This gives 6 contrasts to analyze:
 
-    ## Source: local data frame [6 x 3]
-    ## 
-    ##           variable  down    up
-    ##             (fctr) (int) (int)
-    ## 1   V186.3vsMock.3    12    10
-    ## 2   V186.8vsMock.8     8     1
-    ## 3 V186.24vsMock.24   993   534
-    ## 4   SD90.3vsMock.3     2     0
-    ## 5   SD90.8vsMock.8     0     0
-    ## 6 SD90.24vsMock.24     0     0
+V186.3vsMock.3 V186.8vsMock.8 V186.24vsMock.24
+
+SD90.3vsMock.3 SD90.8vsMock.8 SD90.24vsMock.24
+
+After fitting the contrasts to the model using our design matrix, we can see how many probes are up and down-regulated for each contras, based on a p-value cut-off of 0.05 and a log-fold-change cut-off of 0.5.
+
+<table>
+<colgroup>
+<col width="23%" />
+<col width="9%" />
+<col width="5%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">variable</th>
+<th align="center">down</th>
+<th align="center">up</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">V186.3vsMock.3</td>
+<td align="center">12</td>
+<td align="center">10</td>
+</tr>
+<tr class="even">
+<td align="center">V186.8vsMock.8</td>
+<td align="center">8</td>
+<td align="center">1</td>
+</tr>
+<tr class="odd">
+<td align="center">V186.24vsMock.24</td>
+<td align="center">993</td>
+<td align="center">534</td>
+</tr>
+<tr class="even">
+<td align="center">SD90.3vsMock.3</td>
+<td align="center">2</td>
+<td align="center">0</td>
+</tr>
+<tr class="odd">
+<td align="center">SD90.8vsMock.8</td>
+<td align="center">0</td>
+<td align="center">0</td>
+</tr>
+<tr class="even">
+<td align="center">SD90.24vsMock.24</td>
+<td align="center">0</td>
+<td align="center">0</td>
+</tr>
+</tbody>
+</table>
 
 Heatmaps of the first 4 contrasts: V186 vs mock at 3hr, 8hr, and 24 hrs, SD90 vs Mock at 3 hrs. Last plot is of the same probes found to be DE in V186.24vsMock but looking at their expression in the SD90.24vsMock condition, just to see if there is a similar pattern.
 
-![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-11-1.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-11-2.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-11-3.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-11-4.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-11-5.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-11-6.png)
+![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-13-1.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-13-2.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-13-3.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-13-4.png) ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-13-5.png)
 
-    ## [[1]]
-    ## NULL
-    ## 
-    ## [[2]]
-    ## NULL
-    ## 
-    ## [[3]]
-    ## NULL
-    ## 
-    ## [[4]]
-    ## NULL
-    ## 
-    ## [[5]]
-    ## NULL
-    ## 
-    ## [[6]]
-    ## NULL
-
-Looks like there would still be a lot (hundreds)of DE probes for the v186 24hr comparison if reduced the adj p val cutoff to 0.01, but that would reduce the \# of DE probes in the v186.3 to ~2 and v186.8 to ~3. The SD90.3 would be 2 and SD90.8 and .24 were already zero with p\<=0.05
+![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-14-1.png)
 
 SessionInfo()
 
@@ -424,8 +118,9 @@ SessionInfo()
     ## [8] base     
     ## 
     ## other attached packages:
-    ## [1] reshape2_1.4.1      limma_3.22.7        lumi_2.18.0        
-    ## [4] Biobase_2.26.0      BiocGenerics_0.12.1 dplyr_0.4.3        
+    ## [1] pander_0.5.2        reshape2_1.4.1      limma_3.22.7       
+    ## [4] lumi_2.18.0         Biobase_2.26.0      BiocGenerics_0.12.1
+    ## [7] dplyr_0.4.3        
     ## 
     ## loaded via a namespace (and not attached):
     ##  [1] affy_1.44.0             affyio_1.34.0          
