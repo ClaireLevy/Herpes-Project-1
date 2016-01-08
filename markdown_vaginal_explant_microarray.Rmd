@@ -10,6 +10,9 @@ output:
 require(dplyr)
 require(lumi)
 require(limma)
+library(pander)
+library(stringr)
+library(ggplot2)
 
 #READ IN RAW MICROARRAY DATA FINAL REPORT #######
 #data from shared resources
@@ -33,24 +36,33 @@ save(RAW.lumi, file="RAW.lumi.Rdata")
 
 EXPERIMENT NOTES
 
-6 samples failed when the microarray was run( 6,33,34,35,45,63)
+6 samples failed when the microarray was run (6, 33, 34, 35, 45, 63)
 and two failed QC (36,64).
 
-6= One of the T-cell samples, not included in explant study
-33=ID326 T1 M
-34=ID 326 T2 V1
-35=ID 326 T3 V2
-36 ID 317 T2 M
-45 ID 318 T3 V1
-63 ID 327 T2 V1
-64 ID 319 T2 M
+
+FAILED SAMPLES
+6 One of the T-cell samples, not included in the explant study
+
+33 ID326 3hr MOCK
+
+34 ID 326 8hr SD90
+
+35 ID 326 24hr V186
+
+36 ID 317 8hr MOCK
+
+45 ID 318 24hr SD90
+
+63 ID 327 8hr SD90
+
+64 ID 319 8hr MOCK
 
 
 Samples that failed the finalReport file were not included in the report we got from shared resources and I removed the ones that failed QC.
 
 ALSO
 
-The first 5 samples in the micrarray data are T cells that 
+The first 6 samples in the micrarray data are T cells that 
 were exposed to Tenofovir. These will be analyzed separately so I removed them from the data set here.
 
 
@@ -235,9 +247,9 @@ dims(QNTB.complete.RAW.lumi)[1]-dims(expressedProbes.lumi)[1]
 save(expressedProbes.lumi, file="expressedProbes.lumi.Rdata")
 ```
 
-The design matrix includes a combined treatment + timepoint parameter('r"Treat"') and a donor parameter ('r "TissueID"').
+The design matrix includes a combined treatment + timepoint parameter (`r "Treat" `) and a donor parameter (`r "TissueID" `).
 
-'r design <-(~0+Treat+TissueID)'
+`r design <-(~0+Treat+TissueID)`
 
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
@@ -257,11 +269,15 @@ design<-model.matrix (~0+Treat+TissueID)
 Then we choose the comparisons we want to analyze. I will compare treatment + timepoint condition with the corresponding mock infection in the same donor. This gives 6 contrasts to analyze:
 
   V186.3vsMock.3
+  
   V186.8vsMock.8
+  
   V186.24vsMock.24 
   
   SD90.3vsMock.3 
+  
   SD90.8vsMock.8 
+  
   SD90.24vsMock.24
 
 
@@ -302,7 +318,7 @@ fit2 <-eBayes(fit2)
 save(fit2, file= "fit2eBayes.Rdata")
 ```
 
-After fitting the contrasts to the model using our design matrix, we can see how many probes are up and down-regulated for each contras, based on a p-value cut-off of 0.05 and a log-fold-change cut-off of 0.5.
+After fitting the contrasts to the model using our design matrix, we can see how many probes are up and down-regulated for each contrast, based on a p-value cut-off of 0.05 and a log-fold-change cut-off of 0.5.
 
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
@@ -401,7 +417,11 @@ names(UpRegProbes)<-levels(interestingProbes$variable)
 
 ```
 
-Heatmaps of the first 4 contrasts: V186 vs mock at 3hr, 8hr, and 24 hrs, SD90 vs Mock at 3 hrs. Last plot is of the same probes found to be DE in V186.24vsMock but looking at their expression in the SD90.24vsMock condition, just to see if there is a similar pattern.
+Heatmaps of the first 4 contrasts (the only ones with DE probes):
+
+V186 vs mock at 3hr
+
+SD90 vs Mock at 3 hrs. Last plot is of the same probes found to be DE in V186.24vsMock but looking at their expression in the SD90.24vsMock condition, just to see if there is a similar pattern.
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ############### TOP TABLE AND HEAT MAPS #############
@@ -425,7 +445,11 @@ heatmap(exprs(esetSel1))
 
 
 
+```
 
+V186 vs mock at 8hr
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #repeat for coefs 2
 tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -437,6 +461,11 @@ colnames(exprs(esetSel2))<-pData(expressedProbes.lumi)[colnames(esetSel2),"Treat
 
 
 heatmap(exprs(esetSel2))
+```
+
+V186 vs mock at 24hr
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 #and coef3
 tt3<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
@@ -448,8 +477,11 @@ esetSel3<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !
 colnames(exprs(esetSel3))<-pData(expressedProbes.lumi)[colnames(esetSel3),"Treatment"]
 
 heatmap(exprs(esetSel3))
+```
 
+SD90vsMock at 3hr
 
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #and coef4
 tt4<-topTable(fit2,coef="SD90.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -461,8 +493,11 @@ colnames(exprs(esetSel4))<-pData(expressedProbes.lumi)[colnames(esetSel4),"Treat
 
 heatmap(exprs(esetSel4))
 
+```
 
+SD90vsMock at 24hrs, but showing the probes that were DE at that time for V186, just to see if there are similar trends.
 
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #making another heatmap with the same probes but using exprs
 #data from SD90.24. So using "selected1" but different Time and #Treatment to see if there is a similar pattern (even though there weren't a lot of sig probes for those conditions)
 
@@ -471,10 +506,15 @@ esetSel<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !=
 colnames(exprs(esetSel))<-pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"]
 
 heatmap(exprs(esetSel))
-#NOPE
 ```
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, results='hide'}
+Not really similar.
+
+Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes.
+
+Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 ################# PREPARING DATA FOR INNATE DB ##############
 
@@ -501,7 +541,7 @@ V186.24ForIDBUP<-V186.24ForIDB%>%
 write.table(V186.24ForIDBUP, file="V186.24ForIDBUP.txt",
             sep="\t", row.names = FALSE)
 
-##I put the above file into innateDB with the "subset of genes", "hypergeometric" and "no correction" options for the pathway ORA.
+##I put the above file into innateDB with the "subset of genes", "hypergeometric" and "no correction" options for the pathway ORA. I don't think it matters if pvals are included 
 
 V186.24ForIDBDOWN<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
@@ -509,27 +549,75 @@ V186.24ForIDBDOWN<-V186.24ForIDB%>%
 
 write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
             sep="\t", row.names = FALSE)
-#############################################################
-
-#looking and # of sig probes with different p val limits
 
 
-x<- log10(tt3$adj.P.Val)
 
-plot(x, type="l")
-sigline <- c(.05, .01, .005, .001,.0005, .0001)
-sigline <- log10(sigline)
-sigcolors <- c("red", "blue", "green", "yellow","pink","purple")
-sapply(1:length(sigline), function(x){abline(h=sigline[x], col=sigcolors[x])})
+### READING IN DATA FROM INNATE DB
 
+#PathwayData
+
+folder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/spreadsheets"
+
+files <- list.files(folder)
+
+filesPath<-paste(folder, "/",files, sep="")
+
+IDBdata <- lapply(filesPath, read.delim, sep="\t", header=TRUE)
+
+
+## I got the "number of items read is not a multiple of the number of columns" error for the pathwayV186.24DOWN when I tried to read in with read.table. Don't know why read.delim works. thx stkovrflw
+
+names(IDBdata)<-str_replace(files,pattern=".txt",replacement="")
+
+#For now just look at the top ten pathways
+#here's a function to make arrange the PATHWAY dataframes by corrected pval and the select the columns I want
+
+## BIG NOTE #########################################
+
+#when you download the files from the GO ORA from innate DB, the column names are PATHWAY name, PATHWAY Id, PATHWAY pval etc. This is different from what is shown on the actual online interface. see screenshots here: "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS
+
+#Bottom line: You can't tell the differences between p-way and GO ORA's based on the downloaded txt file unless you keep the weird long file name that they give. I can use pathway...to refer to columns from both types of df.
+
+###### END BIG NOTE ##################################
+
+### SELECTING COLUMNS OF INTEREST AND CORRECTING COLUMN NAMES ###
+makeShort <- function (df){
+  df%>%
+  arrange(Pathway.p.value..corrected.)%>%
+  slice(1:10)%>%
+  select(Pathway.Name, Pathway.p.value..corrected.)
+    
+}
+
+shortIDBdata<-lapply(IDBdata,FUN=makeShort)
+
+
+#Here is a function to change the column names to things that make more sense:One for the GO ORA dfs
+GOChangeNames<-function(df){
+  names(df)<-c("GO Term","Corrected P Value")
+  return(df)
+}
+# lapply to just the GO ORA dfs (the first 2 in the list)
+shortIDBdata[1:2]<-lapply(shortIDBdata[1:2],FUN=GOChangeNames)
+
+
+#another function for the pathway ORA dfs
+PWChangeNames<-function(df){
+  names(df)<-c("Pathway Name","Corrected P Value")
+  return(df)
+}
+#lapply to the PW ORA dfs
+shortIDBdata[3:4]<-lapply(shortIDBdata[3:4],FUN=PWChangeNames)
+
+
+pander(shortIDBdata)
+
+  
 ```
 
 SessionInfo()
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
-#for innateDB
-DownV186.24<-as.numeric(DownRegProbes[[3]])
-write.table(DownV186.24, "DownV186.24.txt", sep="\t", row.names = FALSE)
 
 sessionInfo()
