@@ -189,9 +189,31 @@ PLOTS OF NORMALIZED DATA
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 plot(QNTB.complete.RAW.lumi)
 
+
 plot(QNTB.complete.RAW.lumi, what='sampleRelation',method="mds")
 
 boxplot(QNTB.complete.RAW.lumi)
+
+
+#trying to find which sample makes the outlier bump
+#exp<-as.data.frame(exprs(QNTB.complete.RAW.lumi))
+
+# exp$Probes<-rownames(exp)
+# 
+# rownames(exp)<- NULL
+# 
+# melt<-melt(exp, id.vars="Probes")
+# 
+# sum<-melt%>%
+#   group_by(variable)%>%
+#   summarize(count=sum(value>7.1))%>%
+#   arrange(desc(count))
+  
+#plot(QNTB.complete.RAW.lumi[,"32"])
+
+
+
+
 
 ```
 
@@ -223,6 +245,12 @@ detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=7
 #now extract just those probes that are TRUE from the lumibatch
 
 expressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
+
+
+#after filtering, mds plot is basically the same as before
+#plot(expressedProbes.lumi, what='sampleRelation',method="mds")
+
+
 ```
 
 Number of probes in data set before filtering:
@@ -355,69 +383,9 @@ pander(summary)
 save(summary, file = "summary.Rdata")
 
 
-
-##### MERGE RESULTS WITH ENTREZ's FROM F DATA 
-
-#add entrez ids to the melted p val and lfc filtered results df
-
-ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
-
-save(ProbeIDandSymbol,file="ProbeIDandSymbol.Rdata")
-
-#merge the melted results matrix with the entrez ids
-interestingProbes<-merge(resultsDFmelt,ProbeIDandSymbol,
-                         by="ProbeID")
-
-#####  MAKE VECTOR OF DE PROBES WITH ENTREZ's ONLY
-
-#remove the unchanged probes
-interestingProbes<-filter(interestingProbes, value!="0")
-
-#Here are the probes that don't have any coresp. entrez ID and, except for 1, have no symbol
-#notice use of which() here
-noEntrez<-interestingProbes [which (is.na (interestingProbes$ENTREZ_GENE_ID)), ]
-
-#they are all v186.24 except 1  that is V186.3
-#there is 1 that has no entrez but does have a symbol, which is weird.
-#apparantly it should be entrez ID 7316 http://www.genecards.org/cgi-bin/carddisp.pl?gene=UBC
-
-
-#checking the fData for that one...
-x<-fData (RAW.lumi) [ fData(RAW.lumi)$ProbeID == "1430239", ]
-
-#adding in that missing Entrez ID
-
-interestingProbes$ENTREZ_GENE_ID <- ifelse (interestingProbes$SYMBOL=="UBC","7316",interestingProbes$ENTREZ_GENE_ID)
-
-
-#vector of interesting probes that HAVE entrez ids
-interestingProbes<-interestingProbes [! (is.na(interestingProbes$ENTREZ_GENE_ID)), ]
-  
-####### EXTRACTING INTERESTING PROBES FOR ANALYSIS
-
-#function to extract the up and down regulated probes for each contrast with the entrez IDs
-
-getProbes<-function(contrast,direction){
-  interestingProbes[ interestingProbes$variable == contrast & interestingProbes$value ==  direction,
-                     "ENTREZ_GENE_ID"]
-}
-
-#list of contrasts to pass to getProbes function
-contrastList<-levels(interestingProbes$variable)
-
-#down regulated probes
-DownRegProbes<-lapply(contrastList, FUN=getProbes,"-1")
-
-names(DownRegProbes)<-levels(interestingProbes$variable)
-
-#upregulatedProbes
-UpRegProbes<-lapply(contrastList, FUN=getProbes,"1")
-
-names(UpRegProbes)<-levels(interestingProbes$variable)
-
+Heatmaps of the first 4 contrasts (the only ones with DE probes):
 ```
 
-Heatmaps of the first 4 contrasts (the only ones with DE probes):
 
 V186 vs mock at 3hr
 
@@ -509,20 +477,44 @@ heatmap(exprs(esetSel))
 
 Not really similar.
 
-Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes.
+Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes and for the V186.3 condition. I didn't get any hits for the pathway analysis for V186.3UP.
 
 Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
-################# PREPARING DATA FOR INNATE DB ##############
+################# PREPARING DATA FOR INNATE DB 
 
 #innate db pathway analysis requires probes ids, log fold changes and expression pvalues. 
 
-#I will extract those for V186.24vsMock.24 (contrast3)from 
-#the toptable that I made above (tt3) and exclude any probes
-#witout entrez ids
+#I will extract those for V186.24vsMock.24 and V186.3vsMock.3 (contrast 1 and 3)from 
+#the toptable that I made above (tt1 and tt3)
 
+#V186.3
+V186.3ForIDB<-tt1%>%
+  select(logFC,adj.P.Val)
+ 
+V186.3ForIDB$ProbeID<-rownames(V186.3ForIDB)
+
+rownames(V186.3ForIDB$ProbeID)<-NULL
+
+V186.3ForIDB<-merge(ProbeIDandSymbol,V186.3ForIDB, by = "ProbeID")
+
+V186.3ForIDBUP<-V186.3ForIDB%>%
+  select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
+  filter(logFC>0)
+
+write.table(V186.3ForIDBUP, file="V186.3ForIDBUP.txt",
+            sep="\t", row.names = FALSE)
+
+
+V186.3ForIDBDOWN<-V186.3ForIDB%>%
+  select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
+  filter(logFC<0)
+
+write.table(V186.3ForIDBDOWN, file="V186.3ForIDBDOWN.txt",
+            sep="\t", row.names = FALSE)
+#V186.24
 
 V186.24ForIDB<-tt3%>%
   select(logFC,adj.P.Val)
@@ -540,7 +532,7 @@ V186.24ForIDBUP<-V186.24ForIDB%>%
 write.table(V186.24ForIDBUP, file="V186.24ForIDBUP.txt",
             sep="\t", row.names = FALSE)
 
-##I put the above file into innateDB with the "subset of genes", "hypergeometric" and "no correction" options for the pathway ORA. I don't think it matters if pvals are included 
+
 
 V186.24ForIDBDOWN<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
@@ -549,7 +541,7 @@ V186.24ForIDBDOWN<-V186.24ForIDB%>%
 write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
             sep="\t", row.names = FALSE)
 
-
+##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included 
 
 ### READING IN DATA FROM INNATE DB
 
@@ -563,6 +555,8 @@ filesPath<-paste(folder, "/",files, sep="")
 
 IDBdata <- lapply(filesPath, read.delim, sep="\t", header=TRUE)
 
+
+#Got no hits in IDB fo v186.3UP pathway ORA
 
 ## I got the "number of items read is not a multiple of the number of columns" error for the pathwayV186.24DOWN when I tried to read in with read.table. Don't know why read.delim works. thx stkovrflw
 
@@ -596,17 +590,17 @@ GOChangeNames<-function(df){
   names(df)<-c("GO Term","Corrected P Value")
   return(df)
 }
-# lapply to just the GO ORA dfs (the first 2 in the list)
-shortIDBdata[1:2]<-lapply(shortIDBdata[1:2],FUN=GOChangeNames)
+# lapply to just the GO ORA dfs (the first 4 in the list)
+shortIDBdata[1:4]<-lapply(shortIDBdata[1:4],FUN=GOChangeNames)
 
 
-#another function for the pathway ORA dfs
+#another function for the pathway ORA dfs (last 3 in the list)
 PWChangeNames<-function(df){
   names(df)<-c("Pathway Name","Corrected P Value")
   return(df)
 }
 #lapply to the PW ORA dfs
-shortIDBdata[3:4]<-lapply(shortIDBdata[3:4],FUN=PWChangeNames)
+shortIDBdata[5:7]<-lapply(shortIDBdata[5:7],FUN=PWChangeNames)
 
 
 pander(shortIDBdata)
