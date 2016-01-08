@@ -266,7 +266,7 @@ design<-model.matrix (~0+Treat+TissueID)
 
 ```
 
-Then we choose the comparisons we want to analyze. I will compare treatment + timepoint condition with the corresponding mock infection in the same donor. This gives 6 contrasts to analyze:
+Then we choose the comparisons we want to analyze. I compared each treatment + timepoint condition with the corresponding mock infection in the same donor. This gives 6 contrasts to analyze:
 
   V186.3vsMock.3
   
@@ -421,7 +421,6 @@ Heatmaps of the first 4 contrasts (the only ones with DE probes):
 
 V186 vs mock at 3hr
 
-SD90 vs Mock at 3 hrs. Last plot is of the same probes found to be DE in V186.24vsMock but looking at their expression in the SD90.24vsMock condition, just to see if there is a similar pattern.
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ############### TOP TABLE AND HEAT MAPS #############
