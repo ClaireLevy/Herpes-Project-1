@@ -115,8 +115,6 @@ After fitting the contrasts to the model using our design matrix, we can see how
 </tbody>
 </table>
 
-Heatmaps of the first 4 contrasts (the only ones with DE probes):
-
 V186 vs mock at 3hr
 
 ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/unnamed-chunk-13-1.png)
@@ -139,7 +137,7 @@ SD90vsMock at 24hrs, but showing the probes that were DE at that time for V186, 
 
 Not really similar.
 
-Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes.
+Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes and for the V186.3 condition. I didn't get any hits for the pathway analysis for V186.3UP.
 
 Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
 
@@ -257,6 +255,120 @@ Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
     </tbody>
     </table>
 
+-   **GOV186.3DOWN**:
+
+    <table>
+    <colgroup>
+    <col width="43%" />
+    <col width="26%" />
+    </colgroup>
+    <thead>
+    <tr class="header">
+    <th align="center">GO Term</th>
+    <th align="center">Corrected P Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr class="odd">
+    <td align="center">innate immune response</td>
+    <td align="center">0.003665</td>
+    </tr>
+    <tr class="even">
+    <td align="center">U1 snRNA binding</td>
+    <td align="center">0.006214</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">U3 snoRNA binding</td>
+    <td align="center">0.006214</td>
+    </tr>
+    <tr class="even">
+    <td align="center">exoribonuclease II activity</td>
+    <td align="center">0.006214</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">nicotinamide phosphoribosyltransferase activity</td>
+    <td align="center">0.006214</td>
+    </tr>
+    <tr class="even">
+    <td align="center">regulation of retroviral genome replication</td>
+    <td align="center">0.006214</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">U2 snRNA binding</td>
+    <td align="center">0.008284</td>
+    </tr>
+    <tr class="even">
+    <td align="center">interleukin-8 receptor binding</td>
+    <td align="center">0.008284</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">nicotinamide metabolic process</td>
+    <td align="center">0.008284</td>
+    </tr>
+    <tr class="even">
+    <td align="center">single-stranded DNA 3'-5' exodeoxyribonuclease activity</td>
+    <td align="center">0.01017</td>
+    </tr>
+    </tbody>
+    </table>
+
+-   **GOV186.3UP**:
+
+    <table>
+    <colgroup>
+    <col width="41%" />
+    <col width="26%" />
+    </colgroup>
+    <thead>
+    <tr class="header">
+    <th align="center">GO Term</th>
+    <th align="center">Corrected P Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr class="odd">
+    <td align="center">Ndc80 complex</td>
+    <td align="center">0.007172</td>
+    </tr>
+    <tr class="even">
+    <td align="center">mitotic spindle organization</td>
+    <td align="center">0.01792</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">condensed chromosome kinetochore</td>
+    <td align="center">0.03177</td>
+    </tr>
+    <tr class="even">
+    <td align="center">chromosome segregation</td>
+    <td align="center">0.04057</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">mitotic nuclear division</td>
+    <td align="center">0.08906</td>
+    </tr>
+    <tr class="even">
+    <td align="center">mitotic cell cycle</td>
+    <td align="center">0.123</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">nucleus</td>
+    <td align="center">0.2217</td>
+    </tr>
+    <tr class="even">
+    <td align="center">nucleic acid binding</td>
+    <td align="center">0.2244</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">intracellular</td>
+    <td align="center">0.2371</td>
+    </tr>
+    <tr class="even">
+    <td align="center">sequence-specific DNA binding transcription factor activity</td>
+    <td align="center">0.2402</td>
+    </tr>
+    </tbody>
+    </table>
+
 -   **pathwayV186.24DOWN**:
 
     <table>
@@ -367,6 +479,39 @@ Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
     <tr class="even">
     <td align="center">GTP hydrolysis and joining of the 60S ribosomal subunit</td>
     <td align="center">9.468e-07</td>
+    </tr>
+    </tbody>
+    </table>
+
+-   **pathwayV186.3DOWN**:
+
+    <table>
+    <colgroup>
+    <col width="41%" />
+    <col width="26%" />
+    </colgroup>
+    <thead>
+    <tr class="header">
+    <th align="center">Pathway Name</th>
+    <th align="center">Corrected P Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr class="odd">
+    <td align="center">Nonsense Mediated Decay (NMD) enhanced by the Exon Junction Complex (EJC)</td>
+    <td align="center">0.0007015</td>
+    </tr>
+    <tr class="even">
+    <td align="center">Nonsense-Mediated Decay (NMD)</td>
+    <td align="center">0.0007015</td>
+    </tr>
+    <tr class="odd">
+    <td align="center">RNA transport</td>
+    <td align="center">0.001225</td>
+    </tr>
+    <tr class="even">
+    <td align="center">Gene Expression</td>
+    <td align="center">0.03728</td>
     </tr>
     </tbody>
     </table>

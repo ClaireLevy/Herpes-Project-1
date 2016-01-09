@@ -382,8 +382,6 @@ pander(summary)
 
 save(summary, file = "summary.Rdata")
 
-
-Heatmaps of the first 4 contrasts (the only ones with DE probes):
 ```
 
 
@@ -409,8 +407,6 @@ esetSel1<-expressedProbes.lumi[selected1,targets$Time=="3"& targets$Treatment !=
 colnames(exprs(esetSel1))<-pData(expressedProbes.lumi)[colnames(esetSel1),"Treatment"]
 
 heatmap(exprs(esetSel1))
-
-
 
 ```
 
@@ -483,7 +479,12 @@ Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
-################# PREPARING DATA FOR INNATE DB 
+### PREPARING DATA FOR INNATE DB
+
+
+#extracting ProbeIDs, symbols and Entrez from fData
+ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
+
 
 #innate db pathway analysis requires probes ids, log fold changes and expression pvalues. 
 
@@ -498,8 +499,10 @@ V186.3ForIDB$ProbeID<-rownames(V186.3ForIDB)
 
 rownames(V186.3ForIDB$ProbeID)<-NULL
 
+#merge in the fData with the results data 
 V186.3ForIDB<-merge(ProbeIDandSymbol,V186.3ForIDB, by = "ProbeID")
 
+#Get a df for just the upreg probes (lfc>0)
 V186.3ForIDBUP<-V186.3ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
   filter(logFC>0)
@@ -507,14 +510,14 @@ V186.3ForIDBUP<-V186.3ForIDB%>%
 write.table(V186.3ForIDBUP, file="V186.3ForIDBUP.txt",
             sep="\t", row.names = FALSE)
 
-
+#Get a df for just the downreg probes (lfc<0)
 V186.3ForIDBDOWN<-V186.3ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
   filter(logFC<0)
 
 write.table(V186.3ForIDBDOWN, file="V186.3ForIDBDOWN.txt",
             sep="\t", row.names = FALSE)
-#V186.24
+########## V186.24
 
 V186.24ForIDB<-tt3%>%
   select(logFC,adj.P.Val)
