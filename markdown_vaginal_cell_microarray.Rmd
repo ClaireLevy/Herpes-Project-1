@@ -142,14 +142,14 @@ detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=3
 #meaning there were at least 3 samples with detection p-values
 #that were <0.05
 
-expressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
+CELLSexpressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
 ```
 
 how many probes did we have before and after filtering?
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)#47323
 
-dims(expressedProbes.lumi)#22894
+dims(CELLSexpressedProbes.lumi)#22894
 ```
 
 
@@ -158,9 +158,9 @@ How many removed?
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
-dims(QNTB.complete.RAW.lumi)-dims(expressedProbes.lumi)#20192
+dims(QNTB.complete.RAW.lumi)-dims(CELLSexpressedProbes.lumi)#20192
 
-save(expressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
+save(CELLSexpressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
 ```
 
 Here's the design matrix for the analysis
@@ -171,7 +171,7 @@ Here's the design matrix for the analysis
 ############### TARGETS AND DESIGN MATRIX ###################
 # see section 9.4.1 and 9.4.2 in the limma users guide
 
-targets<-pData(expressedProbes.lumi)%>%
+targets<-pData(CELLSexpressedProbes.lumi)%>%
   select(TissueID, Treatment,Time)
 TissueID<- factor(targets$TissueID)
 Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
@@ -189,7 +189,7 @@ Here's the contrasts matrix
 
 ####################### FIT MODEL TO PROBES ###################
 
-fit <- lmFit(expressedProbes.lumi,design=design)
+fit <- lmFit(CELLSexpressedProbes.lumi,design=design)
 save(fit, file="CELLSfit.Rdata")
 
 #Now we can make any comparisons
@@ -289,14 +289,14 @@ CELLStt1<-topTable(fit2,coef="V186.3vsMock.3", adjust.method = "BH", number=Inf,
 
 CELLSselected1<-rownames(CELLStt1) #selecting the probes of interest
 
-#from the expressedProbes.lumi batch, select just the samples #corresponding to the corresponding coefs (time=24, treatment not SD90)
+#from the CELLSexpressedProbes.lumi batch, select just the samples #corresponding to the corresponding coefs (time=24, treatment not SD90)
 
-CELLSesetSel1<-expressedProbes.lumi[CELLSselected1,targets$Time=="3"& targets$Treatment !="SD90" ]
+CELLSesetSel1<-CELLSexpressedProbes.lumi[CELLSselected1,targets$Time=="3"& targets$Treatment !="SD90" ]
 
 #To have informative names along the bottom of the heatmap,replace #the true Sample Names(numbers)with their corresponding treatment.
-#i.e. look at the rows in expressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
+#i.e. look at the rows in CELLSexpressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
 
-colnames(exprs(CELLSesetSel1))<-pData(expressedProbes.lumi)[colnames(CELLSesetSel1),"Treatment"]
+colnames(exprs(CELLSesetSel1))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel1),"Treatment"]
 
 heatmap(exprs(CELLSesetSel1))
 ```
@@ -309,9 +309,9 @@ CELLStt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf,
 
 CELLSselected2<-rownames(CELLStt2) #selecting the probes of interest
 
-CELLSesetSel2<-expressedProbes.lumi[CELLSselected2,targets$Time=="8"& targets$Treatment !="SD90" ]
+CELLSesetSel2<-CELLSexpressedProbes.lumi[CELLSselected2,targets$Time=="8"& targets$Treatment !="SD90" ]
 
-colnames(exprs(CELLSesetSel2))<-pData(expressedProbes.lumi)[colnames(CELLSesetSel2),"Treatment"]
+colnames(exprs(CELLSesetSel2))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel2),"Treatment"]
 
 
 heatmap(exprs(CELLSesetSel2))
@@ -326,14 +326,15 @@ CELLStt3<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=In
 
 CELLSselected3<-rownames(CELLStt3) #selecting the probes of interest
 
-CELLSesetSel3<-expressedProbes.lumi[CELLSselected3,targets$Time=="24"& targets$Treatment !="SD90" ]
+CELLSesetSel3<-CELLSexpressedProbes.lumi[CELLSselected3,targets$Time=="24"& targets$Treatment !="SD90" ]
 
-colnames(exprs(CELLSesetSel3))<-pData(expressedProbes.lumi)[colnames(CELLSesetSel3),"Treatment"]
+colnames(exprs(CELLSesetSel3))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel3),"Treatment"]
 
 heatmap(exprs(CELLSesetSel3))
 ```
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
 CELLSttList<-list(CELLStt1, CELLStt2,CELLStt3)
 ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
 save(ProbeIDandSymbol, file="CELLSProbeIDandSymbol.Rda")
@@ -345,9 +346,7 @@ getInteresting <- function(df){
 short<-df[,c("logFC","adj.P.Val")]
   short$ProbeID<-rownames(short)
   rownames(short)<- NULL
-  
   merge(ProbeIDandSymbol,short, by = "ProbeID")
- 
 }
 
 
@@ -360,10 +359,9 @@ names(CELLSshortTTlist) <-c("CELLS_V186.3","CELLS_V186.8","CELLS_V186.24")
 getUP<-function(df){
   df%>%
     filter(logFC>0)%>%
-    select(ENTREZ_GENE_ID, logFC, adj.P.Val)
-}
- df["logFC">0, c("ENTREZ_GENE_ID", "logFC", "adj.P.Val")]
-}
+    select(ENTREZ_GENE_ID, logFC, adj.P.Val)}
+
+ 
 
 getDOWN<-function(df){
   df%>%
@@ -378,15 +376,9 @@ CELLSV186UP<-lapply(CELLSshortTTlist,FUN=getUP)
 CELLSV186DOWN<-lapply(CELLSshortTTlist,FUN=getDOWN)
 
 
-
-
-
-
-
 #mapply looping over both list itself and the list names to name the txt files
 
 mapply(write.table,CELLSV186UP,file=paste(names(CELLSV186UP),"UP",".txt", sep=""))
 
 mapply(write.table,CELLSV186DOWN,file=paste(names(CELLSV186DOWN),"DOWN",".txt",sep=""))
-
 
