@@ -528,6 +528,9 @@ rownames(V186.24ForIDB$ProbeID)<-NULL
 
 V186.24ForIDB<-merge(ProbeIDandSymbol,V186.24ForIDB, by = "ProbeID")
 
+
+
+
 V186.24ForIDBUP<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
   filter(logFC>0)
@@ -545,6 +548,33 @@ write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
             sep="\t", row.names = FALSE)
 
 ##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included 
+
+
+
+
+### GETTING GENE SYMBOL LISTS FOR FH
+
+#V186.24ForIDB has the symbol data so I can put that into genenames.org 
+
+#top 50 UP DE probes
+explant_top50_V186.24_UP<-V186.24ForIDB%>%
+  select(SYMBOL,logFC,adj.P.Val)%>%
+  filter(logFC>0)%>%
+  arrange(adj.P.Val)%>%
+  slice(1:100)%>%
+  select(SYMBOL)
+
+write.table(explant_top50_V186.24_UP,file="explant_top50_V186.24_UP.txt",row.names=FALSE,quote=FALSE)
+
+#top 50 DOWN DE probes
+explant_top50_V186.24_DOWN<-V186.24ForIDB%>%
+  select(SYMBOL,logFC,adj.P.Val)%>%
+  filter(logFC<0)%>%
+  arrange(adj.P.Val)%>%
+  slice(1:100)%>%
+  select(SYMBOL)
+
+write.table(explant_top50_V186.24_DOWN,file="explant_top50_V186.24_DOWN.txt",row.names=FALSE,quote=FALSE)
 
 ### READING IN DATA FROM INNATE DB
 
@@ -581,25 +611,26 @@ makeShort <- function (df){
   df%>%
   arrange(Pathway.p.value..corrected.)%>%
   slice(1:10)%>%
-  select(Pathway.Name, Pathway.p.value..corrected.)
-    
+  select(Pathway.Name, Pathway.p.value..corrected.,Source.Name)
 }
 
 shortIDBdata<-lapply(IDBdata,FUN=makeShort)
 
 
 #Here is a function to change the column names to things that make more sense:One for the GO ORA dfs
-GOChangeNames<-function(df){
-  names(df)<-c("GO Term","Corrected P Value")
+GOChangeNamesAndFilter<-function(df){
+  names(df)<-c("GO Term","Corrected P Value","Source.Name")
   return(df)
+  x<-df["Source.Name"=="biological process",]
+  return(x)
 }
 # lapply to just the GO ORA dfs (the first 4 in the list)
-shortIDBdata[1:4]<-lapply(shortIDBdata[1:4],FUN=GOChangeNames)
+shortIDBdata[1:4]<-lapply(shortIDBdata[1:4],FUN=GOChangeNamesAndFilter)
 
 
 #another function for the pathway ORA dfs (last 3 in the list)
 PWChangeNames<-function(df){
-  names(df)<-c("Pathway Name","Corrected P Value")
+  names(df)<-c("Pathway Name","Corrected P Value", "Source.Name")
   return(df)
 }
 #lapply to the PW ORA dfs
