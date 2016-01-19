@@ -610,35 +610,58 @@ names(IDBdata)<-str_replace(files,pattern=".txt",replacement="")
 makeShort <- function (df){
   df%>%
   arrange(Pathway.p.value..corrected.)%>%
-  slice(1:10)%>%
   select(Pathway.Name, Pathway.p.value..corrected.,Source.Name)
 }
 
 shortIDBdata<-lapply(IDBdata,FUN=makeShort)
 
+#split into two different lists, one for p-way and one for GO
+
+GOIDBdata<-shortIDBdata[1:4]
+
+names(GOIDBdata)<-names(IDBdata)[1:4]
+
+
+#filter for just the biological processes and get the top 10 hits
+GOfilterSlice<-function(df){
+  df%>%filter(Source.Name =="biological process")%>%
+  slice(1:10)
+}
+
+GOIDBdata<-lapply(GOIDBdata, FUN= GOfilterSlice)
 
 #Here is a function to change the column names to things that make more sense:One for the GO ORA dfs
-GOChangeNamesAndFilter<-function(df){
+
+
+GOChangeNames<-function(df){
   names(df)<-c("GO Term","Corrected P Value","Source.Name")
   return(df)
-  x<-df["Source.Name"=="biological process",]
-  return(x)
 }
-# lapply to just the GO ORA dfs (the first 4 in the list)
-shortIDBdata[1:4]<-lapply(shortIDBdata[1:4],FUN=GOChangeNamesAndFilter)
+
+# lapply to the GO ORA dfs
+GOIDBdata<-lapply(GOIDBdata,FUN=GOChangeNames)
+
+pander(GOIDBdata)
 
 
-#another function for the pathway ORA dfs (last 3 in the list)
+#Do the same for the pathway data except don't filter the source name
+
+
+#lapply to the PW ORA dfs
+PwayIDBdata<-shortIDBdata[5:7]
+
+names(GOIDBdata)<-names(IDBdata)[5:7]
+
 PWChangeNames<-function(df){
   names(df)<-c("Pathway Name","Corrected P Value", "Source.Name")
   return(df)
 }
-#lapply to the PW ORA dfs
-shortIDBdata[5:7]<-lapply(shortIDBdata[5:7],FUN=PWChangeNames)
 
+PwayIDBdata <-lapply(shortIDBdata[5:7],FUN=PWChangeNames)
 
-pander(shortIDBdata)
+PwayIDBdata<-lapply(PwayIDBdata, FUN=slice, 1:10)
 
+pander(PwayIDBdata)
   
 ```
 
