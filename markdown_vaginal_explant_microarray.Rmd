@@ -7,6 +7,7 @@ output:
 "Vaginal explant herpes infection experiment"
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
+library(plyr)
 require(dplyr)
 require(lumi)
 require(limma)
@@ -392,9 +393,11 @@ V186 vs mock at 3hr
 ############### TOP TABLE AND HEAT MAPS #############
 
 #adj p values <0.05 and lfc >=0.5
-
+#get the toptable for this contrast
 tt1<-topTable(fit2,coef="V186.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
+
+#get the probes that are in the top table
 selected1<-rownames(tt1) #selecting the probes of interest
 
 #from the expressedProbes.lumi batch, select just the samples #corresponding to the corresponding coefs (time=24, treatment not SD90)
@@ -458,21 +461,29 @@ heatmap(exprs(esetSel4))
 
 ```
 
-SD90vsMock at 24hrs, but showing the probes that were DE at that time for V186, just to see if there are similar trends.
+Heat map of V186 AND SD90 at 24hr for probes that were sig for V186.24
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
-#making another heatmap with the same probes but using exprs
-#data from SD90.24. So using "selected1" but different Time and #Treatment to see if there is a similar pattern (even though there weren't a lot of sig probes for those conditions)
 
-esetSel<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !="V186" ]
+
+esetSel<-expressedProbes.lumi[selected3, targets$Time=="24"]
 
 colnames(exprs(esetSel))<-pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"]
 
 heatmap(exprs(esetSel))
+
 ```
 
-Not really similar.
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
+
+
+
+
+
+
+
+```
 Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes and for the V186.3 condition. I didn't get any hits for the pathway analysis for V186.3UP.
 
 Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
@@ -500,6 +511,7 @@ V186.3ForIDB$ProbeID<-rownames(V186.3ForIDB)
 rownames(V186.3ForIDB$ProbeID)<-NULL
 
 #merge in the fData with the results data 
+
 V186.3ForIDB<-merge(ProbeIDandSymbol,V186.3ForIDB, by = "ProbeID")
 
 #Get a df for just the upreg probes (lfc>0)
@@ -556,7 +568,7 @@ write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
 
 #V186.24ForIDB has the symbol data so I can put that into genenames.org 
 
-#top 50 UP DE probes
+#top 100 UP DE probes
 explant_top50_V186.24_UP<-V186.24ForIDB%>%
   select(SYMBOL,logFC,adj.P.Val)%>%
   filter(logFC>0)%>%
@@ -566,8 +578,8 @@ explant_top50_V186.24_UP<-V186.24ForIDB%>%
 
 write.table(explant_top50_V186.24_UP,file="explant_top50_V186.24_UP.txt",row.names=FALSE,quote=FALSE)
 
-#top 50 DOWN DE probes
-explant_top50_V186.24_DOWN<-V186.24ForIDB%>%
+#top 100 DOWN DE probes
+explant_top50_V186.24_DOWN <- V186.24ForIDB%>%
   select(SYMBOL,logFC,adj.P.Val)%>%
   filter(logFC<0)%>%
   arrange(adj.P.Val)%>%
@@ -576,11 +588,9 @@ explant_top50_V186.24_DOWN<-V186.24ForIDB%>%
 
 write.table(explant_top50_V186.24_DOWN,file="explant_top50_V186.24_DOWN.txt",row.names=FALSE,quote=FALSE)
 
-### READING IN DATA FROM INNATE DB
+### READING IN  ORA DATA FROM INNATE DB
 
-#PathwayData
-
-folder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/spreadsheets"
+folder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/oraSpreadsheets"
 
 files <- list.files(folder)
 
@@ -596,7 +606,7 @@ IDBdata <- lapply(filesPath, read.delim, sep="\t", header=TRUE)
 names(IDBdata)<-str_replace(files,pattern=".txt",replacement="")
 
 #For now just look at the top ten pathways
-#here's a function to make arrange the PATHWAY dataframes by corrected pval and the select the columns I want
+
 
 ## BIG NOTE #########################################
 
@@ -662,7 +672,110 @@ PwayIDBdata <-lapply(shortIDBdata[5:7],FUN=PWChangeNames)
 PwayIDBdata<-lapply(PwayIDBdata, FUN=slice, 1:10)
 
 pander(PwayIDBdata)
-  
+
+```
+
+GO analysis filtered for just the ones that fall in the "Extracellular" cerebralLocalization category
+
+First the "UP" data
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+######### READING IN GENE DATA FROM INNATE DB
+geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets"
+
+geneFiles <- list.files(geneFolder, pattern=".txt")
+
+geneFilesPath<-paste(geneFolder, "/",geneFiles, sep="")
+
+
+geneIDBdata <- lapply(geneFilesPath, read.delim, sep="\t", header=TRUE)
+
+names(geneIDBdata)<-str_replace(geneFiles,pattern=".txt",replacement="")
+
+#There are a lot of columns in the files and several have lots of entries separated by |
+
+#I will just keep the entrez ID, symbol (called "name")and cerebral localization
+
+
+shortgeneIDBdata<-lapply(geneIDBdata, FUN = select, entrez, name,fullname,goTerms)
+
+shortgeneIDBdata<-lapply(shortgeneIDBdata, FUN=filter, goTerms = str_detect(goTerms, pattern = "GO:0005615")==TRUE |str_detect(goTerms, pattern = "GO:0005576")==TRUE)
+
+#annoyingly, there are several rows in the entrez column that have multiple numbers separated by a comma. All correspond to the same gene name (symbol). I want to separate out those rows, melt them so that there is one entrez id per line and then rbind with the rest of the data.
+
+#first separate the two df's in the list so I can deal with them separately:
+
+genesV186.24DOWN <- shortgeneIDBdata[[1]]
+
+genesV186.24UP<-shortgeneIDBdata[[2]]
+
+
+
+noCommas<- function(df){
+x<-filter(df,str_detect(df$entrez,",")==TRUE)
+
+x$position<-rownames(x)
+
+rownames(x)<-NULL
+
+
+y<-melt(str_split(x$entrez, pattern=","))
+
+colnames(y)<-c("singleEntrez","position")
+
+z<-merge(y, x, by="position")
+
+a<-z[,c("singleEntrez","name","fullname")]
+
+names(a)[1]<-"entrez"
+return(a)
+
+}
+
+#try with the UP data
+ExtracellularGenesV186.24UP<-noCommas(genesV186.24UP)
+
+
+#combine with the rest of the data (without commas in entrez)
+#including a step to remove the rows with commas in the orig data
+
+ExtracellularGenesV186.24UP<-genesV186.24UP %>%
+  filter(str_detect(genesV186.24UP$entrez,",")==FALSE)%>%
+  select(-goTerms)%>%
+  rbind(ExtracellularGenesV186.24UP)
+
+pander(ExtracellularGenesV186.24UP)
+
+write.table(ExtracellularGenesV186.24UP, file = "ExtracellularGenesV186.24UP.txt", sep="\t", row.names=FALSE)
+```
+
+
+The "DOWN" data
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+# and DOWN data
+
+ExtracellularGenesV186.24DOWN<-noCommas(genesV186.24DOWN)
+
+
+ExtracellularGenesV186.24DOWN<-genesV186.24DOWN %>%
+  filter(str_detect(genesV186.24DOWN$entrez,",")==FALSE)%>%
+  select(-goTerms)%>%
+  rbind(ExtracellularGenesV186.24DOWN)
+
+
+pander(ExtracellularGenesV186.24DOWN)
+
+write.table(ExtracellularGenesV186.24DOWN, file = "ExtracellularGenesV186.24DOWN.txt", sep="\t", row.names=FALSE)
+```
+
+The one gene that they have in common:
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#which do the V186.24 up and down have in common?
+intersect(ExtracellularGenesV186.24DOWN$fullname,ExtracellularGenesV186.24UP$fullname)
+
 ```
 
 SessionInfo()
