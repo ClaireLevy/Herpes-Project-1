@@ -136,7 +136,8 @@ experimentData<-new("MIAME",name="Claire Levy",
 complete.RAW.lumi<-new("LumiBatch", exprs=exprs(RAW.lumi),phenoData=adf,
                   experimentData=experimentData,
                   se.exprs=se.exprs(RAW.lumi),
-                  detection=detection(RAW.lumi))
+                  detection=detection(RAW.lumi),
+                  featureData=featureData(RAW.lumi))
 
 save(complete.RAW.lumi,file="complete.RAW.lumi.Rdata")
 ```
@@ -474,16 +475,6 @@ heatmap(exprs(esetSel))
 
 ```
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-
-
-
-
-
-
-
-
-```
 Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes and for the V186.3 condition. I didn't get any hits for the pathway analysis for V186.3UP.
 
 Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
@@ -682,9 +673,9 @@ First the "UP" data
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ######### READING IN GENE DATA FROM INNATE DB
-geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets"
+geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets/explant"
 
-geneFiles <- list.files(geneFolder, pattern=".txt")
+geneFiles <- list.files(geneFolder, pattern="all")
 
 geneFilesPath<-paste(geneFolder, "/",geneFiles, sep="")
 
