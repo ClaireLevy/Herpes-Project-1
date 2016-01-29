@@ -80,7 +80,8 @@ experimentData<-new("MIAME",name="Claire Levy",
 complete.RAW.lumi <- new("LumiBatch", exprs = exprs(RAW.lumi),phenoData = adf,
                   experimentData = experimentData,
                   se.exprs = se.exprs(RAW.lumi),
-                  detection = detection(RAW.lumi))
+                  detection = detection(RAW.lumi),
+                  featureData=featureData(RAW.lumi))
 
 save(complete.RAW.lumi,file = "CELLScomplete.RAW.lumi.Rdata")
 
@@ -333,6 +334,7 @@ heatmap(exprs(CELLSesetSel3))
 ```
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
 CELLSttList<-list(CELLStt1, CELLStt2,CELLStt3)
 ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
 save(ProbeIDandSymbol, file="CELLSProbeIDandSymbol.Rda")
@@ -376,14 +378,9 @@ CELLSV186UP<-lapply(CELLSshortTTlist,FUN=getUP)
 CELLSV186DOWN<-lapply(CELLSshortTTlist,FUN=getDOWN)
 
 
-
-
-
-
-
 #mapply looping over both list itself and the list names to name the txt files
 
-mapply(write.table,CELLSV186UP,file=paste(names(CELLSV186UP),"UP",".txt", sep=""))
+mapply(write.table,CELLSV186UP,file=paste(names(CELLSV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
 
-mapply(write.table,CELLSV186DOWN,file=paste(names(CELLSV186DOWN),"DOWN",".txt",sep=""))
+mapply(write.table,CELLSV186DOWN,file=paste(names(CELLSV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
 
