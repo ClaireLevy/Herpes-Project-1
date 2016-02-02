@@ -293,7 +293,7 @@ CELLSselected1<-rownames(CELLStt1) #selecting the probes of interest
 
 CELLSesetSel1<-CELLSexpressedProbes.lumi[CELLSselected1,targets$Time=="3"& targets$Treatment !="SD90" ]
 
-#To have informative names along the bottom of the heatmap,replace #the true Sample Names(numbers)with their corresponding treatment.
+#To have informative names along the bottom of the heatmap,replace the true Sample Names(numbers)with their corresponding treatment.
 #i.e. look at the rows in CELLSexpressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
 
 colnames(exprs(CELLSesetSel1))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel1),"Treatment"]
@@ -383,4 +383,78 @@ CELLSV186DOWN<-lapply(CELLSshortTTlist,FUN=getDOWN)
 mapply(write.table,CELLSV186UP,file=paste(names(CELLSV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
 
 mapply(write.table,CELLSV186DOWN,file=paste(names(CELLSV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
+
+
+
+###reading in the InnateDB results of the GO analysis. Here I will filter for just the probes that were annotated with the GO CC term "extracellular space" OR "extracellular region"
+
+
+geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets/CELLS"
+
+geneFiles <- list.files(geneFolder, pattern="all")
+
+geneFilesPath<-paste(geneFolder, "/",geneFiles, sep="")
+
+
+geneIDBdata <- lapply(geneFilesPath, read.delim, sep="\t", header=TRUE)
+
+names(geneIDBdata)<-str_replace(geneFiles,pattern=".txt",replacement="")
+
+#There are a lot of columns in the files and several have lots of entries separated by |
+
+#I will just keep the entrez ID, symbol (called "name")and goTerms
+
+
+shortgeneIDBdata<-lapply(geneIDBdata, FUN = select, entrez, name,fullname,goTerms)
+
+shortgeneIDBdata<-lapply(shortgeneIDBdata, FUN=filter, goTerms = str_detect(goTerms, pattern = "GO:0005615")==TRUE |str_detect(goTerms, pattern = "GO:0005576")==TRUE)
+
+#annoyingly, there are several rows in the entrez column that have multiple numbers separated by a comma. All correspond to the same gene name (symbol). I want to separate out those rows, melt them so that there is one entrez id per line and then rbind with the rest of the data.
+
+
+
+
+noCommas<- function(df){
+  if(all(str_detect(df$entrez,",")==FALSE)){
+    
+    rownames(df)<-NULL
+    
+    m<-df[,c("entrez","name","fullname")]
+    
+    return(m) ## This part is for the df's in the list that DON'T have any commas and should be left alone
+  }
+  
+  x<-filter(df,str_detect(df$entrez,",")==TRUE)
+  
+  x$position<-rownames(x)
+  
+  rownames(x)<-NULL
+  
+  
+  y<-melt(str_split(x$entrez, pattern=","))#if comma, split, then melt
+  
+  colnames(y)<-c("singleEntrez","position")#position indicates the original position the entrez was in
+  
+  z<-merge(y, x, by="position")#will get the names and full names to repeat
+  
+  a<-z[,c("singleEntrez","name","fullname")] #just get the columns I want
+  
+  names(a)[1]<-"entrez"
+  #next step rbinds the fixed data with its corresp data that had no commas and leaves out the goTerms column
+  b<-filter(df,str_detect(df$entrez,",")==FALSE)%>%
+    select(-goTerms)%>%
+    rbind(a)
+  
+  return(b)
+
+}
+
+
+
+
+#lapply over the list of dataframes
+CELLSExtracellularGenesV186<-lapply(shortgeneIDBdata, FUN=noCommas)
+
+save(CELLSExtracellularGenesV186, file="CELLSExtracellularGenesV186.Rdata")
+
 
