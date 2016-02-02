@@ -7,6 +7,11 @@ output:
 "Vaginal explant herpes infection experiment"
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
+
+
+###READ IN RAW MICROARRAY DATA FINAL REPORT #######
+#data from shared resources
+
 library(plyr)
 require(dplyr)
 require(lumi)
@@ -490,36 +495,10 @@ ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
 
 #innate db pathway analysis requires probes ids, log fold changes and expression pvalues. 
 
-#I will extract those for V186.24vsMock.24 and V186.3vsMock.3 (contrast 1 and 3)from 
-#the toptable that I made above (tt1 and tt3)
+#I will extract those for V186.24vsMock.24 
+#the toptable that I made above ( tt3)
 
-#V186.3
-V186.3ForIDB<-tt1%>%
-  select(logFC,adj.P.Val)
- 
-V186.3ForIDB$ProbeID<-rownames(V186.3ForIDB)
 
-rownames(V186.3ForIDB$ProbeID)<-NULL
-
-#merge in the fData with the results data 
-
-V186.3ForIDB<-merge(ProbeIDandSymbol,V186.3ForIDB, by = "ProbeID")
-
-#Get a df for just the upreg probes (lfc>0)
-V186.3ForIDBUP<-V186.3ForIDB%>%
-  select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
-  filter(logFC>0)
-
-write.table(V186.3ForIDBUP, file="V186.3ForIDBUP.txt",
-            sep="\t", row.names = FALSE)
-
-#Get a df for just the downreg probes (lfc<0)
-V186.3ForIDBDOWN<-V186.3ForIDB%>%
-  select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
-  filter(logFC<0)
-
-write.table(V186.3ForIDBDOWN, file="V186.3ForIDBDOWN.txt",
-            sep="\t", row.names = FALSE)
 ########## V186.24
 
 V186.24ForIDB<-tt3%>%
@@ -530,9 +509,6 @@ V186.24ForIDB$ProbeID<-rownames(V186.24ForIDB)
 rownames(V186.24ForIDB$ProbeID)<-NULL
 
 V186.24ForIDB<-merge(ProbeIDandSymbol,V186.24ForIDB, by = "ProbeID")
-
-
-
 
 V186.24ForIDBUP<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
@@ -550,34 +526,7 @@ V186.24ForIDBDOWN<-V186.24ForIDB%>%
 write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
             sep="\t", row.names = FALSE)
 
-##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included 
-
-
-
-
-### GETTING GENE SYMBOL LISTS FOR FH
-
-#V186.24ForIDB has the symbol data so I can put that into genenames.org 
-
-#top 100 UP DE probes
-explant_top50_V186.24_UP<-V186.24ForIDB%>%
-  select(SYMBOL,logFC,adj.P.Val)%>%
-  filter(logFC>0)%>%
-  arrange(adj.P.Val)%>%
-  slice(1:100)%>%
-  select(SYMBOL)
-
-write.table(explant_top50_V186.24_UP,file="explant_top50_V186.24_UP.txt",row.names=FALSE,quote=FALSE)
-
-#top 100 DOWN DE probes
-explant_top50_V186.24_DOWN <- V186.24ForIDB%>%
-  select(SYMBOL,logFC,adj.P.Val)%>%
-  filter(logFC<0)%>%
-  arrange(adj.P.Val)%>%
-  slice(1:100)%>%
-  select(SYMBOL)
-
-write.table(explant_top50_V186.24_DOWN,file="explant_top50_V186.24_DOWN.txt",row.names=FALSE,quote=FALSE)
+##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included
 
 ### READING IN  ORA DATA FROM INNATE DB
 
@@ -686,7 +635,7 @@ names(geneIDBdata)<-str_replace(geneFiles,pattern=".txt",replacement="")
 
 #There are a lot of columns in the files and several have lots of entries separated by |
 
-#I will just keep the entrez ID, symbol (called "name")and cerebral localization
+#I will just keep the entrez ID, symbol (called "name")and goTerms
 
 
 shortgeneIDBdata<-lapply(geneIDBdata, FUN = select, entrez, name,fullname,goTerms)
@@ -701,67 +650,59 @@ genesV186.24DOWN <- shortgeneIDBdata[[1]]
 
 genesV186.24UP<-shortgeneIDBdata[[2]]
 
-
-
 noCommas<- function(df){
-x<-filter(df,str_detect(df$entrez,",")==TRUE)
-
-x$position<-rownames(x)
-
-rownames(x)<-NULL
-
-
-y<-melt(str_split(x$entrez, pattern=","))
-
-colnames(y)<-c("singleEntrez","position")
-
-z<-merge(y, x, by="position")
-
-a<-z[,c("singleEntrez","name","fullname")]
-
-names(a)[1]<-"entrez"
-return(a)
+  if(all(str_detect(df$entrez,",")==FALSE)){
+    
+    rownames(df)<-NULL
+    
+    m<-df[,c("entrez","name","fullname")]
+    
+    return(m) ## This part is for the df's in the list that DON'T have any commas and should be left alone
+  }
+  
+  x<-filter(df,str_detect(df$entrez,",")==TRUE)
+  
+  x$position<-rownames(x)
+  
+  rownames(x)<-NULL
+  
+  
+  y<-melt(str_split(x$entrez, pattern=","))#if comma, split, then melt
+  
+  colnames(y)<-c("singleEntrez","position")#position indicates the original position the entrez was in
+  
+  z<-merge(y, x, by="position")#will get the names and full names to repeat
+  
+  a<-z[,c("singleEntrez","name","fullname")] #just get the columns I want
+  
+  names(a)[1]<-"entrez"
+  #next step rbinds the fixed data with its corresp data that had no commas and leaves out the goTerms column
+  b<-filter(df,str_detect(df$entrez,",")==FALSE)%>%
+    select(-goTerms)%>%
+    rbind(a)
+  
+  return(b)
 
 }
 
-#try with the UP data
+
+
 ExtracellularGenesV186.24UP<-noCommas(genesV186.24UP)
 
 
-#combine with the rest of the data (without commas in entrez)
-#including a step to remove the rows with commas in the orig data
-
-ExtracellularGenesV186.24UP<-genesV186.24UP %>%
-  filter(str_detect(genesV186.24UP$entrez,",")==FALSE)%>%
-  select(-goTerms)%>%
-  rbind(ExtracellularGenesV186.24UP)
-
-pander(ExtracellularGenesV186.24UP)
-
-write.table(ExtracellularGenesV186.24UP, file = "ExtracellularGenesV186.24UP.txt", sep="\t", row.names=FALSE)
-```
-
-
-The "DOWN" data
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-# and DOWN data
+save(ExtracellularGenesV186.24UP, file="ExtracellularGenesV186.24UP.Rdata")
 
 ExtracellularGenesV186.24DOWN<-noCommas(genesV186.24DOWN)
 
-
-ExtracellularGenesV186.24DOWN<-genesV186.24DOWN %>%
-  filter(str_detect(genesV186.24DOWN$entrez,",")==FALSE)%>%
-  select(-goTerms)%>%
-  rbind(ExtracellularGenesV186.24DOWN)
+save(ExtracellularGenesV186.24DOWN, file="ExtracellularGenesV186.24DOWN.Rdata")
 
 
-pander(ExtracellularGenesV186.24DOWN)
 
-write.table(ExtracellularGenesV186.24DOWN, file = "ExtracellularGenesV186.24DOWN.txt", sep="\t", row.names=FALSE)
+
+
 ```
 
-The one gene that they have in common:
+The  genes that they have in common:
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #which do the V186.24 up and down have in common?
@@ -773,5 +714,14 @@ SessionInfo()
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
+#trying to get go term names out of biomart instead of IDB. IDB gives the same name and symbol for different (but related) entrez IDs
+
+library(biomaRt)
+
+ensembl<-useMart(host="www.ensembl.org", "ENSEMBL_MART_ENSEMBL", dataset="hsapiens_gene_ensembl")
+
+goids<-getBM(attributes=c("entrezgene","go_id","name_1006"),
+             filters = "entrezgene",values=ExtracellularGenesV186.24DOWN$entrez,
+             mart = ensembl)
 
 sessionInfo()
