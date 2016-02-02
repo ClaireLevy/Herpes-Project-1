@@ -1,0 +1,161 @@
+---
+title: "Vaginal cells and explant comparison"
+author: "Claire Levy"
+date: "January 13, 2016"
+output: html_document
+---
+
+We found DE probes in both the vaginal cell and vaginal explant microarry data. Here I will look at overlaps between the DE probes found in each experiment.
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+library(dplyr)
+library(stringr)
+library(reshape2)
+library(ggplot2)
+
+#indicate folder to look in
+folder<-("J:\\MacLabUsers\\HLADIK SHARED\\Projects\\Herpes study\\Herpes-Project-1\\IDBinput")
+
+#get files that have V186 in the name
+files <- list.files(folder, pattern = "V186")
+
+
+filesPath<- paste(folder,"\\",files, sep="")
+
+#read in those files. List includes all timepoints for cells and 24
+cellsAndExplant<-lapply(filesPath, read.table, header = TRUE)
+
+
+
+#add names to the list elements
+names(cellsAndExplant)<-str_replace(files,pattern=".txt",replacement="")
+
+
+
+#look at the intersecting probes from V186.24DOWN
+
+intersectV186.24DOWN <- na.omit(intersect(cellsAndExplant[["CELLS_V186.24DOWN"]]$ENTREZ_GENE_ID,                     cellsAndExplant[["V186.24ForIDBDOWN"]]$ENTREZ_GENE_ID))
+
+
+
+#and for V186.24UP
+
+intersectV186.24UP <- na.omit(intersect(cellsAndExplant[["CELLS_V186.24UP"]]$ENTREZ_GENE_ID,                                  cellsAndExplant[["V186.24ForIDBUP"]]$ENTREZ_GENE_ID))
+
+
+
+```
+
+Number of UP regulated probes that overlap in the V186.24 condition
+`r length(intersectV186.24UP)`
+
+
+Number of DOWN regulated probes that overlap in the V186.24 condition
+
+`r length(intersectV186.24DOWN)`
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+#extract the V186.24 data from the list
+V186.24ForIDBUP<-cellsAndExplant[["V186.24ForIDBUP"]]
+
+CELLS_V186.24UP<-cellsAndExplant[["CELLS_V186.24UP"]]
+
+
+#add a column to each saying which experiment they are from, then limit to just the intersecting probes, rbind together and ggplot the logFCs
+
+V186.24ForIDBUP<-V186.24ForIDBUP%>%
+  mutate(Experiment = "Explant")%>%
+  filter(ENTREZ_GENE_ID %in% intersectV186.24UP)#tests whether equal to anything in that vector
+
+
+
+CELLS_V186.24UP<-CELLS_V186.24UP%>%
+  mutate(Experiment = "Cells")%>%
+  filter(ENTREZ_GENE_ID %in% intersectV186.24UP)
+
+
+cellsAndExplantV186.24UP<-rbind(CELLS_V186.24UP,V186.24ForIDBUP)
+
+cellsAndExplantV186.24UP$ENTREZ_GENE_ID<-as.factor(cellsAndExplantV186.24UP$ENTREZ_GENE_ID)
+
+
+#logFC by probe
+ggplot(cellsAndExplantV186.24UP,aes(x=ENTREZ_GENE_ID, y = logFC))+
+  geom_point(aes(color=Experiment))
+
+#logFC separated by experiment type
+ggplot(cellsAndExplantV186.24UP,aes(x=Experiment, y = logFC))+
+  geom_point(aes(),size=4,alpha=0.5, position=position_jitter(width=.2))
+
+```
+
+logFCs for the cells only seem to be higher in general for the intersecting up-regulated probes.
+
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#repeat the same process for the intersecting downregulated probes
+
+V186.24ForIDBDOWN<-cellsAndExplant[["V186.24ForIDBDOWN"]]%>%
+  mutate(Experiment = "Explant")%>%
+  filter(ENTREZ_GENE_ID %in% intersectV186.24DOWN)
+
+
+
+CELLS_V186.24DOWN<-cellsAndExplant[["CELLS_V186.24DOWN"]]%>%
+  mutate(Experiment = "Cells")%>%
+  filter(ENTREZ_GENE_ID %in% intersectV186.24DOWN)
+
+cellsAndExplantV186.24DOWN<-rbind(CELLS_V186.24DOWN,V186.24ForIDBDOWN)
+
+cellsAndExplantV186.24DOWN$ENTREZ_GENE_ID<-as.factor(cellsAndExplantV186.24DOWN$ENTREZ_GENE_ID)
+
+
+
+#logFC by entrez_gene ID
+ggplot(cellsAndExplantV186.24DOWN,aes(x=ENTREZ_GENE_ID, y = - logFC))+
+  geom_point(aes(color=Experiment))
+
+#logFC separated by experiment type
+ggplot(cellsAndExplantV186.24DOWN,aes(x=Experiment, y = -logFC))+
+  geom_point(aes(),size=4,alpha=0.5, position=position_jitter(width=.2))
+
+```
+
+
+logFC's are also greater (-logFC) for the intersecting downregulated probes in the cells condition.
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+#reading in the InnateDB results of the GO analysis that I filtered for just the probes that were annotated with the GO CC term "extracellular space" OR "extracellular region"
+
+
+#The explant results for V186 Up and DOWN
+load("ExtracellularGenesV186.24UP.Rdata")
+load("ExtracellularGenesV186.24DOWN.Rdata")
+
+
+#The v186 results for all timepoints for CELLS
+load("CELLSExtracellularGenesV186.Rdata")
+
+
+str(CELLSExtracellularGenesV186)
+str(ExtracellularGenesV186.24)
+
+
+#now I want to see where each of the  DE explant genes from the extracellular space at 24hr intersect with the CELLS DE genes from the extracellular space at all time points.I'll look at the "fullname" column because the entrez # doesn't really tell me anything.
+
+
+intersections<-function(df1,df2){
+ 
+a<-intersect(df1$fullname,df2$fullname)
+
+}
+
+ExtracellularV186.24UP_vs_CELLSExtracellularV186<-lapply(CELLSExtracellularGenesV186,ExtracellularGenesV186.24UP,FUN=intersections)
+
+ExtracellularV186.24DOWN_vs_CELLSExtracellularV186<-lapply(CELLSExtracellularGenesV186,ExtracellularGenesV186.24DOWN,FUN=intersections)
+
+
+
