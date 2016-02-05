@@ -725,73 +725,69 @@ write.table(forExcelShortGeneIDBdata, file = "forExcelShortGeneIDBdata.txt", sep
 ####Below is more filtering...for myself ###############
 
 
-shortgeneIDBdata<-lapply(shortgeneIDBdata, FUN=filter, goTerms = str_detect(goTerms, pattern = "GO:0005615")==TRUE |str_detect(goTerms, pattern = "GO:0005576")==TRUE)
+# shortgeneIDBdata<-lapply(shortgeneIDBdata, FUN=filter, goTerms = str_detect(goTerms, pattern = "GO:0005615")==TRUE |str_detect(goTerms, pattern = "GO:0005576")==TRUE)
+# 
+# #annoyingly, there are several rows in the entrez column that have multiple numbers separated by a comma. All correspond to the same gene name (symbol). I want to separate out those rows, melt them so that there is one entrez id per line and then rbind with the rest of the data.
+# 
+# #first separate the two df's in the list so I can deal with them separately:
+# 
+# genesV186.24DOWN <- shortgeneIDBdata[[1]]
+# 
+# genesV186.24UP<-shortgeneIDBdata[[2]]
+# 
+# noCommas<- function(df){
+#   if(all(str_detect(df$entrez,",")==FALSE)){
+#     
+#     rownames(df)<-NULL
+#     
+#     m<-df[,c("entrez","name","fullname")]
+#     
+#     return(m) ## This part is for the df's in the list that DON'T have any commas and should be left alone
+#   }
+#   
+#   x<-filter(df,str_detect(df$entrez,",")==TRUE)
+#   
+#   x$position<-rownames(x)
+#   
+#   rownames(x)<-NULL
+#   
+#   
+#   y<-melt(str_split(x$entrez, pattern=","))#if comma, split, then melt
+#   
+#   colnames(y)<-c("singleEntrez","position")#position indicates the original position the entrez was in
+#   
+#   z<-merge(y, x, by="position")#will get the names and full names to repeat
+#   
+#   a<-z[,c("singleEntrez","name","fullname")] #just get the columns I want
+#   
+#   names(a)[1]<-"entrez"
+#   #next step rbinds the fixed data with its corresp data that had no commas and leaves out the goTerms column
+#   b<-filter(df,str_detect(df$entrez,",")==FALSE)%>%
+#     select(-goTerms)%>%
+#     rbind(a)
+#   
+#   return(b)
+# 
+# }
+# 
+# 
+# 
+# ExtracellularGenesV186.24UP<-noCommas(genesV186.24UP)
+# 
+# 
+# save(ExtracellularGenesV186.24UP, file="ExtracellularGenesV186.24UP.Rdata")
+# 
+# ExtracellularGenesV186.24DOWN<-noCommas(genesV186.24DOWN)
+# 
+# save(ExtracellularGenesV186.24DOWN, file="ExtracellularGenesV186.24DOWN.Rdata")
+# 
+# 
+# 
+# 
 
-#annoyingly, there are several rows in the entrez column that have multiple numbers separated by a comma. All correspond to the same gene name (symbol). I want to separate out those rows, melt them so that there is one entrez id per line and then rbind with the rest of the data.
 
-#first separate the two df's in the list so I can deal with them separately:
-
-genesV186.24DOWN <- shortgeneIDBdata[[1]]
-
-genesV186.24UP<-shortgeneIDBdata[[2]]
-
-noCommas<- function(df){
-  if(all(str_detect(df$entrez,",")==FALSE)){
-    
-    rownames(df)<-NULL
-    
-    m<-df[,c("entrez","name","fullname")]
-    
-    return(m) ## This part is for the df's in the list that DON'T have any commas and should be left alone
-  }
-  
-  x<-filter(df,str_detect(df$entrez,",")==TRUE)
-  
-  x$position<-rownames(x)
-  
-  rownames(x)<-NULL
-  
-  
-  y<-melt(str_split(x$entrez, pattern=","))#if comma, split, then melt
-  
-  colnames(y)<-c("singleEntrez","position")#position indicates the original position the entrez was in
-  
-  z<-merge(y, x, by="position")#will get the names and full names to repeat
-  
-  a<-z[,c("singleEntrez","name","fullname")] #just get the columns I want
-  
-  names(a)[1]<-"entrez"
-  #next step rbinds the fixed data with its corresp data that had no commas and leaves out the goTerms column
-  b<-filter(df,str_detect(df$entrez,",")==FALSE)%>%
-    select(-goTerms)%>%
-    rbind(a)
-  
-  return(b)
-
-}
-
-
-
-ExtracellularGenesV186.24UP<-noCommas(genesV186.24UP)
-
-
-save(ExtracellularGenesV186.24UP, file="ExtracellularGenesV186.24UP.Rdata")
-
-ExtracellularGenesV186.24DOWN<-noCommas(genesV186.24DOWN)
-
-save(ExtracellularGenesV186.24DOWN, file="ExtracellularGenesV186.24DOWN.Rdata")
-
-
-
-
-
-```
-
-The  genes that they have in common:
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #which do the V186.24 up and down have in common?
-intersect(ExtracellularGenesV186.24DOWN$fullname,ExtracellularGenesV186.24UP$fullname)
+# intersect(ExtracellularGenesV186.24DOWN$fullname,ExtracellularGenesV186.24UP$fullname)
 
 ```
 
