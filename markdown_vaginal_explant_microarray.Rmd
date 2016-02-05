@@ -413,7 +413,8 @@ esetSel1<-expressedProbes.lumi[selected1,targets$Time=="3"& targets$Treatment !=
 #To have informative names along the bottom of the heatmap,replace #the true Sample Names(numbers)with their corresponding treatment.
 #i.e. look at the rows in expressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
 
-colnames(exprs(esetSel1))<-pData(expressedProbes.lumi)[colnames(esetSel1),"Treatment"]
+colnames(exprs(esetSel1))<-paste(pData(expressedProbes.lumi)[colnames(esetSel1),"Treatment"],
+                                 pData(expressedProbes.lumi)[colnames(esetSel1),"TissueID"],sep= " ")
 
 heatmap(exprs(esetSel1))
 
@@ -429,7 +430,8 @@ selected2<-rownames(tt2) #selecting the probes of interest
 
 esetSel2<-expressedProbes.lumi[selected2,targets$Time=="8"& targets$Treatment !="SD90" ]
 
-colnames(exprs(esetSel2))<-pData(expressedProbes.lumi)[colnames(esetSel2),"Treatment"]
+colnames(exprs(esetSel2))<-paste(pData(expressedProbes.lumi)[colnames(esetSel2),"Treatment"],
+                                 pData(expressedProbes.lumi)[colnames(esetSel2),"TissueID"],sep= " ")
 
 
 heatmap(exprs(esetSel2))
@@ -446,7 +448,10 @@ selected3<-rownames(tt3) #selecting the probes of interest
 
 esetSel3<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !="SD90" ]
 
-colnames(exprs(esetSel3))<-pData(expressedProbes.lumi)[colnames(esetSel3),"Treatment"]
+
+#make the rows along the bottom show both the treatment AND the tissue id corresponding to that column
+colnames(exprs(esetSel3))<-paste(pData(expressedProbes.lumi)[colnames(esetSel3),"Treatment"],
+                                 pData(expressedProbes.lumi)[colnames(esetSel3),"TissueID"],sep= " ")
 
 heatmap(exprs(esetSel3))
 ```
@@ -461,7 +466,8 @@ selected4<-rownames(tt4) #selecting the probes of interest
 
 esetSel4<-expressedProbes.lumi[selected4,targets$Time=="3"& targets$Treatment !="V186" ]
 
-colnames(exprs(esetSel4))<-pData(expressedProbes.lumi)[colnames(esetSel4),"Treatment"]
+colnames(exprs(esetSel4))<-paste(pData(expressedProbes.lumi)[colnames(esetSel4),"Treatment"],
+                                 pData(expressedProbes.lumi)[colnames(esetSel4),"TissueID"],sep= " ")
 
 heatmap(exprs(esetSel4))
 
@@ -474,7 +480,8 @@ Heat map of V186 AND SD90 at 24hr for probes that were sig for V186.24
 
 esetSel<-expressedProbes.lumi[selected3, targets$Time=="24"]
 
-colnames(exprs(esetSel))<-pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"]
+colnames(exprs(esetSel))<-paste(pData(expressedProbes.lumi)[colnames(esetSel),"Treatment"],
+                                 pData(expressedProbes.lumi)[colnames(esetSel),"TissueID"],sep= " ")
 
 heatmap(exprs(esetSel))
 
@@ -528,6 +535,11 @@ write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
 
 ##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included
 
+
+##### ACCESSED IDB ON 7-8Jan2016 ##################
+
+
+
 ### READING IN  ORA DATA FROM INNATE DB
 
 folder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/oraSpreadsheets"
@@ -559,9 +571,10 @@ names(IDBdata)<-str_replace(files,pattern=".txt",replacement="")
 ### SELECTING COLUMNS OF INTEREST AND CORRECTING COLUMN NAMES ###
 makeShort <- function (df){
   df%>%
-  arrange(Pathway.p.value..corrected.)%>%
-  select(Pathway.Name, Pathway.p.value..corrected.,Source.Name)
+  arrange(Pathway.p.value)%>%
+  select(Pathway.Name, Pathway.p.value,Source.Name)
 }
+#LMF says to use the non-adjusted p value for these results
 
 shortIDBdata<-lapply(IDBdata,FUN=makeShort)
 
@@ -584,7 +597,7 @@ GOIDBdata<-lapply(GOIDBdata, FUN= GOfilterSlice)
 
 
 GOChangeNames<-function(df){
-  names(df)<-c("GO Term","Corrected P Value","Source.Name")
+  names(df)<-c("GO Term","P Value","Source.Name")
   return(df)
 }
 
@@ -603,7 +616,7 @@ PwayIDBdata<-shortIDBdata[5:7]
 names(GOIDBdata)<-names(IDBdata)[5:7]
 
 PWChangeNames<-function(df){
-  names(df)<-c("Pathway Name","Corrected P Value", "Source.Name")
+  names(df)<-c("Pathway Name","P Value", "Source.Name")
   return(df)
 }
 
@@ -615,9 +628,9 @@ pander(PwayIDBdata)
 
 ```
 
-GO analysis filtered for just the ones that fall in the "Extracellular" cerebralLocalization category
 
-First the "UP" data
+
+
 
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
@@ -635,10 +648,88 @@ names(geneIDBdata)<-str_replace(geneFiles,pattern=".txt",replacement="")
 
 #There are a lot of columns in the files and several have lots of entries separated by |
 
-#I will just keep the entrez ID, symbol (called "name")and goTerms
+#I will just keep the entrez ID, symbol (called "name")and goTerms and cerebralLocalization
 
 
-shortgeneIDBdata<-lapply(geneIDBdata, FUN = select, entrez, name,fullname,goTerms)
+shortgeneIDBdata<-lapply(geneIDBdata, FUN = select, entrez, name,fullname,goTerms, cerebralLocalization,Fold.Change..cond_1.,
+P.Value..cond_1.)
+
+
+#write this out for Florian
+
+forExcelShortGeneIDBdata<-bind_rows(shortgeneIDBdata, .id="Treatment")
+
+#I found the following way to split the Go terms into varying numbers of columns here: http://stackoverflow.com/questions/15056456/split-strings-into-columns-in-r-where-each-string-has-a-potentially-different-nu
+
+
+#split on #
+splitGoTerms<-strsplit(forExcelShortGeneIDBdata$goTerms, "#")
+## find the largest element
+maxLen<-max(sapply(splitGoTerms,length))
+
+
+# fill in any blanks. The t() is to transpose the return from sapply
+splitGoTerms <- 
+t(sapply(splitGoTerms, function(x)
+      # append to x, NA's.  Note that if (0 == (maxLen - length(x))), then no NA's are appended 
+      c(x, rep(NA, maxLen - length(x)))
+  ))
+
+
+
+forExcelShortGeneIDBdata<-cbind(forExcelShortGeneIDBdata,splitGoTerms)
+
+#now I have the multiple GOID|Term|Category entries for each entrez split into different columns. Now I need to melt so that each of those is on a different row and the id columns (Treatment, etc)are repeated in their columns
+
+
+
+forExcelShortGeneIDBdata<-forExcelShortGeneIDBdata %>%
+  select(-goTerms)%>%
+  melt(id.vars=c("Treatment","entrez","name","fullname","cerebralLocalization","Fold.Change..cond_1.","P.Value..cond_1."),value.name = "GOid_Term_Cat")
+
+# Warning message:
+# attributes are not identical across measure variables; they will be dropped
+
+#I think this is ok, see:http://stackoverflow.com/questions/25688897/reshape2-melt-warning-message
+  
+
+#now split based on the | so the GOID, Term and Category are in different columns
+
+t<-forExcelShortGeneIDBdata$GOid_Term_Cat%>%
+  colsplit(pattern = "\\|", names = c("GO_Id","GO_term", "GO_category"))
+
+forExcelShortGeneIDBdata<-forExcelShortGeneIDBdata %>%
+  select(-c(GOid_Term_Cat,variable)) %>%
+  cbind(t)%>%
+  arrange(Treatment,name)
+
+#There are many rows where there are blanks in the GO_Id, GO_term and GO_category columns. This is an artifact from the step where I split the goTerms column into multiple columns.
+
+#The number of columns created was based on the maximum number of splits that was made. The gene that had that max number will have an entry in every one of those columns, but the genes that had less than the max number of goTerms just have blanks in the columns above which they had entries to fill them.
+
+# Ex) The max # of entries was 135 so 135 columns were created to accomodate that. If gene X had only 46 goTerm entries, it will have blanks in its row for columns 47-135.
+
+#When the data gets melted, those blanks in different columns in a single row become blanks in multiple rows in one column. 
+
+
+#to remove those blanks I will subset the df to include just the rows that do NOT == "" (blank)in the GO_Id column
+
+forExcelShortGeneIDBdata<- forExcelShortGeneIDBdata[!(forExcelShortGeneIDBdata$GO_Id == ""),]
+
+
+write.table(forExcelShortGeneIDBdata, file = "forExcelShortGeneIDBdata.txt", sep = "\t", row.names=FALSE)
+
+###### I opened this file in Excel and made a few excel mogrification fixes, and called it "IDBGenesV186.24" and put it in 
+
+#J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\INNATE DB RESULTS\Excel for FH based on geneSpreadsheets
+
+
+
+
+
+
+####Below is more filtering...for myself ###############
+
 
 shortgeneIDBdata<-lapply(shortgeneIDBdata, FUN=filter, goTerms = str_detect(goTerms, pattern = "GO:0005615")==TRUE |str_detect(goTerms, pattern = "GO:0005576")==TRUE)
 
@@ -714,14 +805,5 @@ SessionInfo()
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
-#trying to get go term names out of biomart instead of IDB. IDB gives the same name and symbol for different (but related) entrez IDs
-
-library(biomaRt)
-
-ensembl<-useMart(host="www.ensembl.org", "ENSEMBL_MART_ENSEMBL", dataset="hsapiens_gene_ensembl")
-
-goids<-getBM(attributes=c("entrezgene","go_id","name_1006"),
-             filters = "entrezgene",values=ExtracellularGenesV186.24DOWN$entrez,
-             mart = ensembl)
 
 sessionInfo()
