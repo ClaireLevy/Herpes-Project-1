@@ -487,10 +487,9 @@ heatmap(exprs(esetSel))
 
 ```
 
-Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes and for the V186.3 condition. I didn't get any hits for the pathway analysis for V186.3UP.
+Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes.
 
-Below are the top 10 results. I used the Benjamini-Hochberg p-value correction.
-
+Below are the top 10 results. 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 ### PREPARING DATA FOR INNATE DB
@@ -626,14 +625,9 @@ PwayIDBdata<-lapply(PwayIDBdata, FUN=slice, 1:10)
 
 pander(PwayIDBdata)
 
-```
 
 
 
-
-
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ######### READING IN GENE DATA FROM INNATE DB
 geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets/explant"
 
