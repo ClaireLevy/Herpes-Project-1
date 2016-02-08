@@ -8,7 +8,7 @@ RNA was isolated from the explants at 3 timepoints after infection: 3 hours, 8 h
 
 We used the Qiagen RNeasy fibrous tissue kit to extract and purify the RNA. We used the NuGEN Ovation PicoSL WTA System V2 to make and amplify cDNA and the NuGEN Encore BiotinIL Module to label the cDNA with biotin. The samples were sent to the FHCRC genomics core facility to be spotted on Illumina Human HT12 v4 beadchip arrays. Samples (one sample is a single TissueID x Treatment x Timepoint) were named with random numbers from 6-69. 
 
-A companion study using the same scheme but with immortalized lines of primary vaginal epithelial cells from three donors was analyzed by different methods, but I have included an analysis here that I did using the raw microarray data from that sample and the same analysis as for the explant study. File associated with this study refer to "vaginal_cell" or "CELLS" to differentiate from the explant study.
+A companion study using the same scheme but with immortalized lines of primary vaginal epithelial cells from three donors was analyzed by different methods, but I have included an analysis here that I did using the raw microarray data from that sample and the same analysis as for the explant study. File associated with this study refer to "vaginal_cell" or "CELLS" to differentiate from the explant study. For this study, (epithelial cells ony) the 0.1 MOI was 800,000 PFU per flask.
 
 ###Data analysis
 * R version 3.1.2 (2014-10-31)
