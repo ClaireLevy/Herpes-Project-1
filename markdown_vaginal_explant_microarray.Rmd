@@ -501,8 +501,8 @@ ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
 
 #innate db pathway analysis requires probes ids, log fold changes and expression pvalues. 
 
-#I will extract those for V186.24vsMock.24 
-#the toptable that I made above ( tt3)
+#I will extract those for all time points
+#the toptablea that I made above 
 
 
 ########## V186.24
@@ -520,7 +520,7 @@ V186.24ForIDBUP<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
   filter(logFC>0)
 
-write.table(V186.24ForIDBUP, file="V186.24ForIDBUP.txt",
+write.table(V186.24ForIDBUP, file="J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/IDBinput/V186.24ForIDBUP.txt",
             sep="\t", row.names = FALSE)
 
 
@@ -529,106 +529,22 @@ V186.24ForIDBDOWN<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
   filter(logFC<0)
 
-write.table(V186.24ForIDBDOWN, file="V186.24ForIDBDOWN.txt",
+write.table(V186.24ForIDBDOWN, file="J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/IDBinput/V186.24ForIDBDOWN.txt",
             sep="\t", row.names = FALSE)
 
 ##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included
 
 
-##### ACCESSED IDB ON 7-8Jan2016 ##################
+##### ACCESSED IDB FOR V186.24UP and DOWN ON 8Jan2016 ######
 
 
 
 ### READING IN  ORA DATA FROM INNATE DB
 
-folder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/oraSpreadsheets"
-
-files <- list.files(folder)
-
-filesPath<-paste(folder, "/",files, sep="")
-
-IDBdata <- lapply(filesPath, read.delim, sep="\t", header=TRUE)
-
-
-#Got no hits in IDB fo v186.3UP pathway ORA
-
-## I got the "number of items read is not a multiple of the number of columns" error for the pathwayV186.24DOWN when I tried to read in with read.table. Don't know why read.delim works. thx stkovrflw
-
-names(IDBdata)<-str_replace(files,pattern=".txt",replacement="")
-
-#For now just look at the top ten pathways
-
-
-## BIG NOTE #########################################
-
-#when you download the files from the GO ORA from innate DB, the column names are PATHWAY name, PATHWAY Id, PATHWAY pval etc. This is different from what is shown on the actual online interface. see screenshots here: "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS
-
-#Bottom line: You can't tell the differences between p-way and GO ORA's based on the downloaded txt file unless you keep the weird long file name that they give. I can use pathway...to refer to columns from both types of df.
-
-###### END BIG NOTE ##################################
-
-### SELECTING COLUMNS OF INTEREST AND CORRECTING COLUMN NAMES ###
-makeShort <- function (df){
-  df%>%
-  arrange(Pathway.p.value)%>%
-  select(Pathway.Name, Pathway.p.value,Source.Name)
-}
-#LMF says to use the non-adjusted p value for these results
-
-shortIDBdata<-lapply(IDBdata,FUN=makeShort)
-
-#split into two different lists, one for p-way and one for GO
-
-GOIDBdata<-shortIDBdata[1:4]
-
-names(GOIDBdata)<-names(IDBdata)[1:4]
-
-
-#filter for just the biological processes and get the top 10 hits
-GOfilterSlice<-function(df){
-  df%>%filter(Source.Name =="biological process")%>%
-  slice(1:10)
-}
-
-GOIDBdata<-lapply(GOIDBdata, FUN= GOfilterSlice)
-
-#Here is a function to change the column names to things that make more sense:One for the GO ORA dfs
-
-
-GOChangeNames<-function(df){
-  names(df)<-c("GO Term","P Value","Source.Name")
-  return(df)
-}
-
-# lapply to the GO ORA dfs
-GOIDBdata<-lapply(GOIDBdata,FUN=GOChangeNames)
-
-pander(GOIDBdata)
-
-
-#Do the same for the pathway data except don't filter the source name
-
-
-#lapply to the PW ORA dfs
-PwayIDBdata<-shortIDBdata[5:7]
-
-names(GOIDBdata)<-names(IDBdata)[5:7]
-
-PWChangeNames<-function(df){
-  names(df)<-c("Pathway Name","P Value", "Source.Name")
-  return(df)
-}
-
-PwayIDBdata <-lapply(shortIDBdata[5:7],FUN=PWChangeNames)
-
-PwayIDBdata<-lapply(PwayIDBdata, FUN=slice, 1:10)
-
-pander(PwayIDBdata)
-
-
 
 
 ######### READING IN GENE DATA FROM INNATE DB
+
 geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets/explant"
 
 geneFiles <- list.files(geneFolder, pattern="all")
@@ -642,14 +558,11 @@ names(geneIDBdata)<-str_replace(geneFiles,pattern=".txt",replacement="")
 
 #There are a lot of columns in the files and several have lots of entries separated by |
 
-#I will just keep the entrez ID, symbol (called "name")and goTerms and cerebralLocalization
-
-
 shortgeneIDBdata<-lapply(geneIDBdata, FUN = select, entrez, name,fullname,goTerms, cerebralLocalization,Fold.Change..cond_1.,
 P.Value..cond_1.)
 
 
-#write this out for Florian
+
 
 forExcelShortGeneIDBdata<-bind_rows(shortgeneIDBdata, .id="Treatment")
 
@@ -718,76 +631,12 @@ write.table(forExcelShortGeneIDBdata, file = "forExcelShortGeneIDBdata.txt", sep
 #J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\INNATE DB RESULTS\Excel for FH based on geneSpreadsheets
 
 
+##NOTE When I remove the rows that don't have a go ID at the end of hte processing,any row that NEVER had a go ID to begin with also gets removed and we lose all information about that gene. There are ~92 of genes that didn't have a go id even when I read them in, and many are pseudo genes or un-verified 
+
+originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 
 
 
-
-####Below is more filtering...for myself ###############
-
-
-# shortgeneIDBdata<-lapply(shortgeneIDBdata, FUN=filter, goTerms = str_detect(goTerms, pattern = "GO:0005615")==TRUE |str_detect(goTerms, pattern = "GO:0005576")==TRUE)
-# 
-# #annoyingly, there are several rows in the entrez column that have multiple numbers separated by a comma. All correspond to the same gene name (symbol). I want to separate out those rows, melt them so that there is one entrez id per line and then rbind with the rest of the data.
-# 
-# #first separate the two df's in the list so I can deal with them separately:
-# 
-# genesV186.24DOWN <- shortgeneIDBdata[[1]]
-# 
-# genesV186.24UP<-shortgeneIDBdata[[2]]
-# 
-# noCommas<- function(df){
-#   if(all(str_detect(df$entrez,",")==FALSE)){
-#     
-#     rownames(df)<-NULL
-#     
-#     m<-df[,c("entrez","name","fullname")]
-#     
-#     return(m) ## This part is for the df's in the list that DON'T have any commas and should be left alone
-#   }
-#   
-#   x<-filter(df,str_detect(df$entrez,",")==TRUE)
-#   
-#   x$position<-rownames(x)
-#   
-#   rownames(x)<-NULL
-#   
-#   
-#   y<-melt(str_split(x$entrez, pattern=","))#if comma, split, then melt
-#   
-#   colnames(y)<-c("singleEntrez","position")#position indicates the original position the entrez was in
-#   
-#   z<-merge(y, x, by="position")#will get the names and full names to repeat
-#   
-#   a<-z[,c("singleEntrez","name","fullname")] #just get the columns I want
-#   
-#   names(a)[1]<-"entrez"
-#   #next step rbinds the fixed data with its corresp data that had no commas and leaves out the goTerms column
-#   b<-filter(df,str_detect(df$entrez,",")==FALSE)%>%
-#     select(-goTerms)%>%
-#     rbind(a)
-#   
-#   return(b)
-# 
-# }
-# 
-# 
-# 
-# ExtracellularGenesV186.24UP<-noCommas(genesV186.24UP)
-# 
-# 
-# save(ExtracellularGenesV186.24UP, file="ExtracellularGenesV186.24UP.Rdata")
-# 
-# ExtracellularGenesV186.24DOWN<-noCommas(genesV186.24DOWN)
-# 
-# save(ExtracellularGenesV186.24DOWN, file="ExtracellularGenesV186.24DOWN.Rdata")
-# 
-# 
-# 
-# 
-
-
-#which do the V186.24 up and down have in common?
-# intersect(ExtracellularGenesV186.24DOWN$fullname,ExtracellularGenesV186.24UP$fullname)
 
 ```
 
