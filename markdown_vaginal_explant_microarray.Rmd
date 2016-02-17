@@ -544,6 +544,11 @@ write.table(V186.24ForIDBDOWN, file="J:/MacLabUsers/HLADIK SHARED/Projects/Herpe
 
 
 ######### READING IN GENE DATA FROM INNATE DB
+library(stringr)
+library(dplyr)
+library(reshape2)
+library (tidyr)
+
 
 geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets/explant"
 
@@ -566,8 +571,6 @@ P.Value..cond_1.)
 
 forExcelShortGeneIDBdata<-bind_rows(shortgeneIDBdata, .id="Treatment")
 
-#I found the following way to split the Go terms into varying numbers of columns here: http://stackoverflow.com/questions/15056456/split-strings-into-columns-in-r-where-each-string-has-a-potentially-different-nu
-
 
 #split on #
 splitGoTerms<-strsplit(forExcelShortGeneIDBdata$goTerms, "#")
@@ -575,29 +578,23 @@ splitGoTerms<-strsplit(forExcelShortGeneIDBdata$goTerms, "#")
 maxLen<-max(sapply(splitGoTerms,length))
 
 
-# fill in any blanks. The t() is to transpose the return from sapply
-splitGoTerms <- 
-t(sapply(splitGoTerms, function(x)
-      # append to x, NA's.  Note that if (0 == (maxLen - length(x))), then no NA's are appended 
-      c(x, rep(NA, maxLen - length(x)))
-  ))
+# separate the goTerms column into multiple columns
+
+forExcelShortGeneIDBdata <- tidyr::separate(forExcelShortGeneIDBdata, 
+   col = goTerms,                               # column to split 
+   into = paste("GoTerm", 1:maxLen, sep = ""),  # new column names
+   sep = "#")
 
 
-
-forExcelShortGeneIDBdata<-cbind(forExcelShortGeneIDBdata,splitGoTerms)
 
 #now I have the multiple GOID|Term|Category entries for each entrez split into different columns. Now I need to melt so that each of those is on a different row and the id columns (Treatment, etc)are repeated in their columns
 
 
 
 forExcelShortGeneIDBdata<-forExcelShortGeneIDBdata %>%
-  select(-goTerms)%>%
   melt(id.vars=c("Treatment","entrez","name","fullname","cerebralLocalization","Fold.Change..cond_1.","P.Value..cond_1."),value.name = "GOid_Term_Cat")
 
-# Warning message:
-# attributes are not identical across measure variables; they will be dropped
 
-#I think this is ok, see:http://stackoverflow.com/questions/25688897/reshape2-melt-warning-message
   
 
 #now split based on the | so the GOID, Term and Category are in different columns
@@ -624,7 +621,14 @@ forExcelShortGeneIDBdata<-forExcelShortGeneIDBdata %>%
 forExcelShortGeneIDBdata<- forExcelShortGeneIDBdata[!(forExcelShortGeneIDBdata$GO_Id == ""),]
 
 
+forExcelShortgeneIDBdata<- forExcelShortGeneIDBdata[!(forExcelShortGeneIDBdata$GO_Id == ""),]
+
+
+
 write.table(forExcelShortGeneIDBdata, file = "forExcelShortGeneIDBdata.txt", sep = "\t", row.names=FALSE)
+
+
+
 
 ###### I opened this file in Excel and made a few excel mogrification fixes, and called it "IDBGenesV186.24" and put it in 
 
