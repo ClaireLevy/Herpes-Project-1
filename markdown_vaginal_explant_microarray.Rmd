@@ -279,7 +279,7 @@ Number of probes removed by filtering:
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)[1]-dims(expressedProbes.lumi)[1]
 
-save(expressedProbes.lumi, file="expressedProbes.lumi.Rdata")
+load("expressedProbes.lumi.Rdata")
 ```
 
 The design matrix includes a combined treatment + timepoint parameter (`r "Treat" `) and a donor parameter (`r "TissueID" `).
@@ -377,6 +377,8 @@ library(reshape2)
 
 resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
 save(resultsDFmelt,file = "resultsDFmelt.Rdata")
+
+
 #number of up and down regulated probes based on 
 #p.val at most 0.05 and lfc at least 0.5
 
@@ -538,11 +540,6 @@ write.table(V186.24ForIDBDOWN, file="J:/MacLabUsers/HLADIK SHARED/Projects/Herpe
 ##### ACCESSED IDB FOR V186.24UP and DOWN ON 8Jan2016 ######
 
 
-
-### READING IN  ORA DATA FROM INNATE DB
-
-
-
 ######### READING IN GENE DATA FROM INNATE DB
 library(stringr)
 library(dplyr)
@@ -641,10 +638,39 @@ originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 
 
 
+```
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#trying to use camera function for gene set testing. 
+
+#Downloaded the c7 gene set from MSigDB to use as my set of interest
+
+# camera needs expression values (y)...
+
+y<-exprs(expressedProbes.lumi)
+
+#and an index vector, (use ids2indices function)
+
+#provide a character vector of the entrez ids from y to ids2indices
+
+
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+index<-ids2indices(gene.sets = Hs.c7, identifiers = identifiers)
+
+#define a matrix of the contrast that you want the results for
+
+contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
+
+#put arguments into camera
+cameraResult<-camera(y=y, index=index, design = design, contrast = contr )
+
+
+
 
 ```
 
-SessionInfo()
+Session info
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
