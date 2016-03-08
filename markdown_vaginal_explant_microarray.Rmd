@@ -678,6 +678,21 @@ load("design.Rdata")
 load("CELLSV186UP.Rdata")
 load("CELLSV186DOWN.Rdata")
 
+##add directional annotation to CELLS list. These are lists of DE probes for the 3 time points, V186 only.
+
+names(CELLSV186UP)<-paste(names(CELLSV186UP), "UP", sep= "")
+
+names(CELLSV186DOWN)<-paste(names(CELLSV186DOWN), "DOWN", sep= "")
+
+
+#make it into one list
+CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
+
+#Extract just the ENTREZ IDs and use the resulting list as the gene.sets
+
+entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) as.character(x$ENTREZ_GENE_ID))
+
+
 
 y<-exprs(expressedProbes.lumi)
 
@@ -686,10 +701,7 @@ identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
 
 
 
-#Note that list makes a list with a single element and as.list makes each ID a different element (not what I want)
-gene.sets<-list(as.character(CELLStt3$ENTREZ_GENE_ID))
-
-index<-index<-ids2indices(gene.sets = gene.sets, identifiers = identifiers)
+index<-index<-ids2indices(gene.sets = entrezCELLSV186DE, identifiers = identifiers)
 
 
 #define a matrix of the contrast that you want the results for
