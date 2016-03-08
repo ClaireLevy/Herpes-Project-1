@@ -643,12 +643,16 @@ originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 
 CAMERA TESTING
 
+The design matrix I used for the `camera` function is the same one that I used for DE analysis above and the contrast matrix is
 
-Result of camera test using CELLS experiment DE probes from V186.24 condition
+`contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)`
+
+Expression data: The  same expression set that I used for DE analysis above (`expressedProbes.lumi`).
+
+Gene set: Probes from the epithelial cell ("CELLS") microarray that I found to be DE in the V186 infected, 24 hr timepoint(V186.24) condition.
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #trying to use camera function for gene set testing. 
-
 
 ##Expression set to use
 load("expressedProbes.lumi.Rdata")
@@ -680,9 +684,11 @@ cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
 cameraResult
 ```
 
-Gene sets to use for second camera test. These are also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
+Second camera test:
+Same design and contrast matrix as for prev. test.
 
-
+Gene set: 
+Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
 
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
@@ -710,9 +716,7 @@ str(entrezCELLSV186DE)
 
 ```
 
-Result from the second camera test, which used CELLS experiment up and down DE probes from each time point of the V186 treatment as gene sets.
-
-
+Result from the second camera test
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 ##Expression set to use

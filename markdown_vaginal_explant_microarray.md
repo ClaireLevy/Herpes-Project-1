@@ -139,12 +139,20 @@ Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V1
 
 CAMERA TESTING
 
-Result of camera test using CELLS experiment DE probes from V186.24 condition
+The design matrix I used for the `camera` function is the same one that I used for DE analysis above and the contrast matrix is
+
+`contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)`
+
+Expression data: The same expression set that I used for DE analysis above (`expressedProbes.lumi`).
+
+Gene set: Probes from the epithelial cell ("CELLS") microarray that I found to be DE in the V186 infected, 24 hr timepoint(V186.24) condition.
 
     ##   NGenes Correlation Direction      PValue
     ## 1  13476 0.001320977        Up 0.000145382
 
-Gene sets to use for second camera test. These are also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
+Second camera test: Same design and contrast matrix as for prev. test.
+
+Gene set: Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
 
     ## List of 6
     ##  $ CELLS_V186.3UP   : chr [1:321] "167153" "2152" "7082" "3280" ...
@@ -154,7 +162,7 @@ Gene sets to use for second camera test. These are also DE probes from the CELLS
     ##  $ CELLS_V186.8DOWN : chr [1:79] "8148" "254427" "51706" "8500" ...
     ##  $ CELLS_V186.24DOWN: chr [1:6150] "473" "55973" "2152" "2286" ...
 
-Result from the second camera test, which used CELLS experiment up and down DE probes from each time point of the V186 treatment as gene sets.
+Result from the second camera test
 
     ##                   NGenes Correlation Direction      PValue         FDR
     ## CELLS_V186.24DOWN   9236 0.007300659        Up 0.001040406 0.006242434
