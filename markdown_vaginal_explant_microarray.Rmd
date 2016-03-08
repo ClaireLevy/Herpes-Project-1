@@ -298,7 +298,7 @@ TissueID<- factor(targets$TissueID)
 Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
 
 design<-model.matrix (~0+Treat+TissueID)
-
+save(design, file="design.Rdata")
 ```
 
 Then we choose the comparisons we want to analyze. I compared each treatment + timepoint condition with the corresponding mock infection in the same donor. This gives 6 contrasts to analyze:
@@ -642,8 +642,10 @@ originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #trying to use camera function for gene set testing. 
+load("expressedProbes.lumi.Rdata")
+load("design.Rdata")
 
-#Downloaded the c7 gene set from MSigDB to use as my set of interest
+#Downloaded the c2 gene set from MSigDB to use as my set of interest
 
 # camera needs expression values (y)...
 
@@ -656,7 +658,7 @@ y<-exprs(expressedProbes.lumi)
 
 identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
 
-index<-ids2indices(gene.sets = Hs.c7, identifiers = identifiers)
+index<-ids2indices(gene.sets = Hs.c2, identifiers = identifiers)
 
 #define a matrix of the contrast that you want the results for
 
@@ -665,14 +667,53 @@ contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
 #put arguments into camera
 cameraResult<-camera(y=y, index=index, design = design, contrast = contr )
 
+#get identical result if set inter.gene.cor to fixed value
+cameraResult2<-camera(y=y, index=index, design = design, contrast = contr, inter.gene.cor = 0.01)
+
+identical(cameraResult, cameraResult2)
+####Now trying the same thing but using the DE probes from the epithelial cell MA as the set to compare against.
+load("expressedProbes.lumi.Rdata")
+load("CELLStt3.Rdata")
+load("design.Rdata")
+load("CELLSV186UP.Rdata")
+load("CELLSV186DOWN.Rdata")
+
+
+y<-exprs(expressedProbes.lumi)
+
+
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+
+
+#Note that list makes a list with a single element and as.list makes each ID a different element (not what I want)
+gene.sets<-list(as.character(CELLStt3$ENTREZ_GENE_ID))
+
+index<-index<-ids2indices(gene.sets = gene.sets, identifiers = identifiers)
+
+
+#define a matrix of the contrast that you want the results for
+
+contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
+
+#put arguments into camera
+V186.24cameraResult<-camera(y=y, index=index, design = design, contrast = contr )
+
+cameraResult
 
 
 
 ```
+Result from camera (competitive) gene set test with 
+epithelial cell V186.24 DE probes as the gene set and the EXPLANT probes as the test genes. In the V186.24 treatment, the genes in this set are highly ranked relative to the genes not in the set.
+
+
 
 Session info
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+
 
 
 sessionInfo()
