@@ -150,7 +150,7 @@ save(complete.RAW.lumi,file="complete.RAW.lumi.Rdata")
  SOME PLOTS OF NON NORMALIZED DATA:
  density plot, cdf plot, sample relations
  
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 #density plot
 density(complete.RAW.lumi)#number of probes for each sample that occur
 #at a certain log2 intensity
@@ -171,7 +171,7 @@ boxplot(complete.RAW.lumi)
 ######## BACKGROUND CORRECTION 
 #the data we got from the core had no background correction so I will do it here
 
-B.complete.RAW.lumi<-lumiB(complete.RAW.lumi)
+B.complete.RAW.lumi<-lumiB(complete.RAW.lumi, method = "bgAdjust")
 
 
 #################### VST TRANSFORMATION 
@@ -193,7 +193,7 @@ save(QNTB.complete.RAW.lumi, file = "QNTB.complete.RAW.lumi.Rdata")
 
 PLOTS OF NORMALIZED DATA 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 plot(QNTB.complete.RAW.lumi)
 
 
@@ -397,7 +397,7 @@ save(summary, file = "summary.Rdata")
 V186 vs mock at 3hr
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 ############### TOP TABLE AND HEAT MAPS #############
 
 #adj p values <0.05 and lfc >=0.5
@@ -424,7 +424,7 @@ heatmap(exprs(esetSel1))
 
 V186 vs mock at 8hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 #repeat for coefs 2
 tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -441,7 +441,7 @@ heatmap(exprs(esetSel2))
 
 V186 vs mock at 24hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 
 #and coef3
 tt3<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
@@ -460,7 +460,7 @@ heatmap(exprs(esetSel3))
 
 SD90vsMock at 3hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 #and coef4
 tt4<-topTable(fit2,coef="SD90.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -477,7 +477,7 @@ heatmap(exprs(esetSel4))
 
 Heat map of V186 AND SD90 at 24hr for probes that were sig for V186.24
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 
 
 esetSel<-expressedProbes.lumi[selected3, targets$Time=="24"]
@@ -640,50 +640,61 @@ originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 
 ```
 
+
+CAMERA TESTING
+
+
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #trying to use camera function for gene set testing. 
-load("expressedProbes.lumi.Rdata")
-load("design.Rdata")
 
-#Downloaded the c2 gene set from MSigDB to use as my set of interest
 
-# camera needs expression values (y)...
-
+##Expression set to use
 y<-exprs(expressedProbes.lumi)
 
-#and an index vector, (use ids2indices function)
+#Using the DE probes from the epithelial cell MA as the set to compare against.
 
-#provide a character vector of the entrez ids from y to ids2indices
+load("expressedProbes.lumi.Rdata")
+load("CELLStt3.Rdata")#top table for cells V186.24 DE probes
+load("design.Rdata")#explant design matrix
 
+###Using CELLStt3 probes as the gene set (so just V186.24 cells data, no other time points and not split into up and down)
 
+#set up the gene set for index
+gene.set<-list(as.character(CELLStt3$ENTREZ_GENE_ID))
+
+#IDs from eset
 identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
 
-index<-ids2indices(gene.sets = Hs.c2, identifiers = identifiers)
+#make index with CELLStt3 probes and eset IDs
+index<-ids2indices(gene.sets = gene.set, identifiers = identifiers)
 
 #define a matrix of the contrast that you want the results for
-
 contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
 
 #put arguments into camera
-cameraResult<-camera(y=y, index=index, design = design, contrast = contr )
+cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
 
-#get identical result if set inter.gene.cor to fixed value
-cameraResult2<-camera(y=y, index=index, design = design, contrast = contr, inter.gene.cor = 0.01)
+cameraResult
+```
 
-identical(cameraResult, cameraResult2)
-####Now trying the same thing but using the DE probes from the epithelial cell MA as the set to compare against.
-load("expressedProbes.lumi.Rdata")
-load("CELLStt3.Rdata")
-load("design.Rdata")
-load("CELLSV186UP.Rdata")
-load("CELLSV186DOWN.Rdata")
+Result of camera test using CELLS experiment DE probes from V186.24 condition
+
+
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+###### Repeat test but for gene sets, use DE probes from all v186 CELLS data, separated by direction of change and time point.
+
+
+load("CELLSV186UP.Rdata")#list of UP reg DE probes for V186 3hr 8 hr 24hr
+load("CELLSV186DOWN.Rdata")#list of DOWN reg DE probes for V186 3hr 8 hr 24hr
+
 
 ##add directional annotation to CELLS list. These are lists of DE probes for the 3 time points, V186 only.
 
 names(CELLSV186UP)<-paste(names(CELLSV186UP), "UP", sep= "")
 
 names(CELLSV186DOWN)<-paste(names(CELLSV186DOWN), "DOWN", sep= "")
-
 
 #make it into one list
 CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
@@ -692,40 +703,58 @@ CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
 
 entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) as.character(x$ENTREZ_GENE_ID))
 
+entrezCELLSV186DE
+
+```
+
+Gene sets to use for second camera test. These are also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
 
 
+
+
+
+
+ 
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+##Expression set to use
 y<-exprs(expressedProbes.lumi)
 
-
+#IDs from eset
 identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
 
 
-
-index<-index<-ids2indices(gene.sets = entrezCELLSV186DE, identifiers = identifiers)
+#find indices of overlaps
+index2<-ids2indices(gene.sets = entrezCELLSV186DE, identifiers = identifiers)
 
 
 #define a matrix of the contrast that you want the results for
-
 contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
 
 #put arguments into camera
-V186.24cameraResult<-camera(y=y, index=index, design = design, contrast = contr )
+V186cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
 
-cameraResult
-
-
-
+V186cameraResult
 ```
-Result from camera (competitive) gene set test with 
-epithelial cell V186.24 DE probes as the gene set and the EXPLANT probes as the test genes. In the V186.24 treatment, the genes in this set are highly ranked relative to the genes not in the set.
+
+Result from the second camera test, which used CELLS experiment up and down DE probes from each time point of the V186 treatment as gene sets.
+
+
+
+
+
+
+
+
 
 
 
 Session info
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
-
-
-
-
 sessionInfo()
+
+
+
+
