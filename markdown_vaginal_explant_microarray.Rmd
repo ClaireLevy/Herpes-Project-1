@@ -491,7 +491,7 @@ heatmap(exprs(esetSel))
 
 Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes.
 
-Below are the top 10 results. 
+ 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
 ### PREPARING DATA FOR INNATE DB
@@ -651,11 +651,12 @@ Result of camera test using CELLS experiment DE probes from V186.24 condition
 
 
 ##Expression set to use
+load("expressedProbes.lumi.Rdata")
 y<-exprs(expressedProbes.lumi)
 
 #Using the DE probes from the epithelial cell MA as the set to compare against.
 
-load("expressedProbes.lumi.Rdata")
+
 load("CELLStt3.Rdata")#top table for cells V186.24 DE probes
 load("design.Rdata")#explant design matrix
 
@@ -729,7 +730,7 @@ index2<-ids2indices(gene.sets = entrezCELLSV186DE, identifiers = identifiers)
 contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
 
 #put arguments into camera
-V186cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
+V186cameraResult<-camera(y = y, index = index2, design = design, contrast = contr )
 
 V186cameraResult
 ```

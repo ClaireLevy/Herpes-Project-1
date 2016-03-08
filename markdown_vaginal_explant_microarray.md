@@ -137,8 +137,6 @@ Heat map of V186 AND SD90 at 24hr for probes that were sig for V186.24
 
 Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes.
 
-Below are the top 10 results.
-
 CAMERA TESTING
 
 Result of camera test using CELLS experiment DE probes from V186.24 condition
@@ -158,8 +156,13 @@ Gene sets to use for second camera test. These are also DE probes from the CELLS
 
 Result from the second camera test, which used CELLS experiment up and down DE probes from each time point of the V186 treatment as gene sets.
 
-    ##   NGenes Correlation Direction      PValue
-    ## 1  13476 0.001320977        Up 0.000145382
+    ##                   NGenes Correlation Direction      PValue         FDR
+    ## CELLS_V186.24DOWN   9236 0.007300659        Up 0.001040406 0.006242434
+    ## CELLS_V186.24UP     6224 0.026346954      Down 0.230405273 0.649860260
+    ## CELLS_V186.8UP      1890 0.038714935      Down 0.389264085 0.649860260
+    ## CELLS_V186.3UP       513 0.036349376      Down 0.433240173 0.649860260
+    ## CELLS_V186.8DOWN    1477 0.055492228      Down 0.558580508 0.670296610
+    ## CELLS_V186.3DOWN     133 0.031153221        Up 0.835392607 0.835392607
 
 Session info
 
