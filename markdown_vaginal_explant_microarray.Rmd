@@ -644,6 +644,8 @@ originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 CAMERA TESTING
 
 
+Result of camera test using CELLS experiment DE probes from V186.24 condition
+
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 #trying to use camera function for gene set testing. 
 
@@ -677,7 +679,7 @@ cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
 cameraResult
 ```
 
-Result of camera test using CELLS experiment DE probes from V186.24 condition
+Gene sets to use for second camera test. These are also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
 
 
 
@@ -703,18 +705,12 @@ CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
 
 entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) as.character(x$ENTREZ_GENE_ID))
 
-entrezCELLSV186DE
+str(entrezCELLSV186DE)
 
 ```
 
-Gene sets to use for second camera test. These are also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
+Result from the second camera test, which used CELLS experiment up and down DE probes from each time point of the V186 treatment as gene sets.
 
-
-
-
-
-
- 
 
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
@@ -737,17 +733,6 @@ V186cameraResult<-camera(y = y, index = index, design = design, contrast = contr
 
 V186cameraResult
 ```
-
-Result from the second camera test, which used CELLS experiment up and down DE probes from each time point of the V186 treatment as gene sets.
-
-
-
-
-
-
-
-
-
 
 
 Session info
