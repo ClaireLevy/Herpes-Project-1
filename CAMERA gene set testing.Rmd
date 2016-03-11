@@ -1,0 +1,143 @@
+---
+title: "Gene Set Testing"
+author: "Claire Levy"
+date: "March 11, 2016"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+
+## Gene set tests of explant data
+
+From the description of the `camera` function from limma:
+
+"Test whether a set of genes is highly ranked relative to other genes in terms of differential expression, accounting for inter-gene correlation."
+
+The user provides:
+
+* a filtered set of expression data (the same set that I used for doing differential expression analysis)
+
+* a design matrix (also the same as for DE analysis)
+
+* a contrast, or, the parts of the expression data we want to compare (in our case V186 24 hours vs Mock 24hrs)
+
+* a gene set of interest
+
+## Results
+
+`camera` looks at how many of the genes that were expressed in the contrast we specified are also in the gene set we provided. The test result gives 
+
+* The number of genes in the input data that were in the gene set
+
+* a p-value that tells us whether the genes that are in the set are more differentially expressed compared with the complement ( i.e. our genes that _weren't_ in the set)
+
+* The correlation between the genes that were in the set
+
+* the direction of change, relative to the gene set. For example, if the direction is DOWN, genes that were in the set have lower DE than genes not in the set.
+
+* if we test >1 gene set, we are given a corrected p-value (FDR)
+
+## Test 1
+
+For the first test I used the following gene set:
+
+Probes from the epithelial cell microarray that I found to be DE in the V186 infected, 24 hr timepoint(V186.24) condition.
+
+Here is the test result
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+library(limma)
+library(lumi)
+library(pander)
+
+
+##Expression set to use
+
+load("expressedProbes.lumi.Rdata")
+
+
+y<-exprs(expressedProbes.lumi)
+
+#Using the DE probes from the epithelial cell MA as the set to compare against.
+
+
+load("CELLStt3.Rdata")#top table for cells V186.24 DE probes
+load("design.Rdata")#explant design matrix
+
+###Using CELLStt3 probes as the gene set (so just V186.24 cells data, no other time points and not split into up and down)
+
+#set up the gene set for index
+gene.set<-list(as.character(CELLStt3$ENTREZ_GENE_ID))
+
+#IDs from eset
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+#make index with CELLStt3 probes and eset IDs
+index<-ids2indices(gene.sets = gene.set, identifiers = identifiers)
+
+#define a matrix of the contrast that you want the results for
+contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
+
+#put arguments into camera
+cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
+
+pander(cameraResult)
+```
+
+## Test 2
+
+Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down.
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+###### Repeat test but for gene sets, use DE probes from all v186 CELLS data, separated by direction of change and time point.
+
+
+load("CELLSV186UP.Rdata")#list of UP reg DE probes for V186 3hr 8 hr 24hr
+load("CELLSV186DOWN.Rdata")#list of DOWN reg DE probes for V186 3hr 8 hr 24hr
+
+
+##add directional annotation to CELLS list. These are lists of DE probes for the 3 time points, V186 only.
+
+names(CELLSV186UP)<-paste(names(CELLSV186UP), "UP", sep= "")
+
+names(CELLSV186DOWN)<-paste(names(CELLSV186DOWN), "DOWN", sep= "")
+
+#make it into one list
+CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
+
+#Extract just the ENTREZ IDs and use the resulting list as the gene.sets
+
+entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) as.character(x$ENTREZ_GENE_ID))
+
+
+```
+
+Result from the second test
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+##Expression set to use
+
+y<-exprs(expressedProbes.lumi)
+
+#IDs from eset
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+
+#find indices of overlaps
+index2<-ids2indices(gene.sets = entrezCELLSV186DE, identifiers = identifiers)
+
+
+#define a matrix of the contrast that you want the results for
+contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
+
+#put arguments into camera
+V186cameraResult<-camera(y = y, index = index2, design = design, contrast = contr )
+
+pander(V186cameraResult)
+
+```
