@@ -1,0 +1,522 @@
+---
+title: "subset_vaginal_explant_microarray"
+author: "Claire Levy"
+date: "February 5, 2016"
+output:
+  md_document:
+    variant: markdown_github
+
+---
+This is a subset of the vaginal explant microarray data. We subset for just the four donors that grouped together by hierarchical clustering in the heat map of V186.24 (323, 317,324,318)
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
+
+library(plyr)
+require(dplyr)
+require(lumi)
+require(limma)
+library(pander)
+library(stringr)
+library(ggplot2)
+```
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide', cache = TRUE}
+#READ IN RAW MICROARRAY DATA FINAL REPORT #######
+#data from shared resources
+
+RAW<-"vaginal_explant_Illumina\\2015_11_10\\GenomeStudioProject\\SeanHughes_HumanHT12v4_151112\\2015.11.12smhughesFinalReport.txt"
+
+RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = '.',
+                parseColumnName = FALSE, checkDupId = FALSE,
+                QC = TRUE,
+                columnNameGrepPattern = list(exprs='AVG_SIGNAL',
+                                                       se.exprs='BEAD_STDERR',
+                                                       detection='Detection Pval',
+                                                       beadNum='Avg_NBEADS'),
+                inputAnnotation=TRUE,
+                annotationColumn=c('ILMN_GENE', 'ENTREZ_GENE_ID', 'GI', 'ACCESSION', 'SYMBOL', 'PROBE_ID', 'PROBE_START', 'PROBE_SEQUENCE', 'CHROMOSOME', 'PROBE_CHR_ORIENTATION', 'PROBE_COORDINATES'),
+                verbose = TRUE)
+
+
+
+```
+
+I am subsetting for just TissueIDs 317 318 323 324 at all time points for V186
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+########### SUBSETTING THE LUMIBATCH 
+
+
+#I want samples
+#8	13	14	16	17	18	20	24	27	30	31	32	36	37	38	40	42	48	54	56	58	59	66	68
+
+
+
+
+#look at which indices those correspond to
+phenoData(RAW.lumi)$sampleID
+
+subset_RAW.lumi<-RAW.lumi[,c("8", "13", "14", "16", "17", "18", "20", "24", "27", "30", "31", "32", "36", "37", "38", "40", "42", "48", "54", "56", "58", "59", "66", "68")]
+
+#read in phenoData (does NOT include any phenoData for non-explant samples)
+
+pData<- read.table("input/explantMicroarrayPhenoData.txt",sep="\t",row.names=1, header=TRUE)
+
+
+
+
+#make the rownames character(they are numbers, but are actually
+#sample names and lumi has them as character)
+
+rownames(pData)<-as.character(rownames(pData))
+pData$TissueID<-as.character(pData$TissueID)
+pData$Time <- as.character(pData$Time)
+
+#subset the pData
+keep<-c("8", "13", "14", "16", "17", "18", "20", "24", "27", "30", "31", "32", "36", "37", "38", "40", "42", "48", "54", "56", "58", "59", "66", "68")
+
+#NOTE the sampleNames are the ROWNAMES in the pdata df
+
+subset_pData<-pData[which(rownames(pData)%in% keep),]
+
+
+#create metadata df
+metadata<- data.frame(labelDescription = c("Tissue,Time,Virus",
+                                           "PTID","Sampling Time","Virus: V1=strain SD90, V2=strain 186, M=Mock", "Treatment:either a virus strain or Mock.",
+                                           "Location of original RNA on 96well plate"),
+                      row.names=c("DescriptiveSampleID","TissueID","Time","Dose","Treatment","PlateID"))
+
+
+#combine metadata and pdata into an annotated df
+
+adf<-new("AnnotatedDataFrame",data = subset_pData,varMetadata=metadata)
+
+#create experiment data
+experimentData<-new("MIAME",name="Claire Levy",
+                    lab="Florian Hladik Lab",title="SUBSET Vaginal Explant Microarray")
+
+
+#make a lumiBatch that contains both the raw data we got from
+#shared resources AND the phenoData, metadata and experiment data
+#that I created MINUS the tenofovir data and the failed samples.
+
+subset_complete.RAW.lumi<-new("LumiBatch", exprs=exprs(subset_RAW.lumi),phenoData=adf,
+                  experimentData=experimentData,
+                  se.exprs=se.exprs(subset_RAW.lumi),
+                  detection=detection(subset_RAW.lumi),
+                  featureData=featureData(subset_RAW.lumi))
+
+save(subset_complete.RAW.lumi,file = "subset_vaginal_explant_microarray/complete.RAW.lumi.Rdata")
+
+
+###NORMALIZATION
+
+B.complete.RAW.lumi<-lumiB(subset_complete.RAW.lumi)
+
+
+#################### VST TRANSFORMATION 
+#"Stabilizing the expression variance based on
+#the bead level expression variance and mean relations"
+
+TB.complete.RAW.lumi <-lumiT (B.complete.RAW.lumi)
+
+################## ROBUST SPLINE NORMALIZATION 
+
+NTB.complete.RAW.lumi<-lumiN(TB.complete.RAW.lumi,method="rsn")
+
+################# QUALITY CONTROL 
+
+QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
+
+save(QNTB.complete.RAW.lumi, file = "subset_vaginal_explant_microarray/QNTB.complete.RAW.lumi.Rdata")
+```
+
+
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#filtering
+            
+detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=7
+
+#now extract just those probes that are TRUE from the lumibatch
+
+expressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
+
+
+#after filtering, mds plot is basically the same as before
+#plot(expressedProbes.lumi, what='sampleRelation',method="mds")
+
+
+```
+
+Number of probes in data set before filtering:
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+dims(QNTB.complete.RAW.lumi)[1]#47323
+```
+
+Number of probes in data set after filtering:
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+dims(expressedProbes.lumi)[1]
+
+```
+
+Number of probes removed by filtering:
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+dims(QNTB.complete.RAW.lumi)[1]-dims(expressedProbes.lumi)[1]
+
+save(expressedProbes.lumi, file = "subset_vaginal_explant_microarray/expressedProbes.lumi.Rdata")
+```
+
+
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+############### TARGETS AND DESIGN MATRIX 
+# see section 9.4.1 and 9.4.2 in the limma users guide
+
+targets<-pData(expressedProbes.lumi)%>%
+  select(TissueID, Treatment,Time)
+TissueID<- factor(targets$TissueID)
+Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
+
+
+
+design<-model.matrix (~0+Treat+TissueID)
+
+
+# Then we choose the comparisons we want to analyze. I compared each treatment + timepoint condition with the corresponding mock infection in the same donor. This gives 3 contrasts to analyze:
+
+#   V186.3vsMock.3
+#   
+#   V186.8vsMock.8
+#   
+#   V186.24vsMock.24 
+#   
+
+####################### FIT MODEL TO PROBES
+
+fit <- lmFit(expressedProbes.lumi,design=design)
+save(fit, file="subset_vaginal_explant_microarray/fit.Rdata")
+
+#Now we can make any comparisons
+#between the experimental conditions
+
+# If topTable is called and coef has two or more elements,
+# then the specified columns will be extracted from fit and
+# topTableF called on the result. topTable with coef=NULL is 
+# the same as topTableF, unless the fitted model fit has only
+# one column.
+
+bothcm<-makeContrasts(
+  V186.3vsMock.3 = TreatV186.3-TreatMock.3,
+  V186.8vsMock.8 = TreatV186.3-TreatMock.8,
+  V186.24vsMock.24 = TreatV186.24-TreatMock.24,
+  levels=design
+)
+
+
+#fit the contrasts  
+fit2<-contrasts.fit(bothcm, fit=fit)
+
+
+#compute diff exprsn
+fit2 <-eBayes(fit2)
+
+save(fit2, file = "subset_vaginal_explant_microarray/fit2eBayes.Rdata")
+
+
+
+
+#method=separate is same as doing topTable for all coefs separately
+
+results <- decideTests(fit2,method="separate", adjust.method="BH",
+                      p.value=0.05, lfc=0.5)
+
+
+#adj p values <0.05 and lfc >=0.5
+#get the toptable for this contrast
+```
+
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+#method=separate is same as doing topTable for all coefs separately
+
+results <- decideTests(fit2,method="separate", adjust.method="BH",
+                      p.value=0.05, lfc=0.5)
+
+save(results, file= "subset_vaginal_explant_microarray/decideTestsResults.Rdata")
+
+#turn the results matrix into a data frame and make the
+#probeID a real column and remove the rownames
+
+resultsDF<-as.data.frame(results)
+resultsDF$ProbeID<-rownames(resultsDF)
+rownames(resultsDF)<-NULL
+
+#melt the df for easy summarizing
+library(reshape2)
+
+resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
+save(resultsDFmelt,file = "subset_vaginal_explant_microarray/resultsDFmelt.Rdata")
+
+
+#number of up and down regulated probes based on 
+#p.val at most 0.05 and lfc at least 0.5
+
+summary<-resultsDFmelt %>%
+  group_by(variable)%>%
+ summarize(down=sum(value=="-1"),up=sum(value=="1"))
+
+library(pander)
+pander(summary)
+
+save(summary, file = "subset_vaginal_explant_microarray/summary.Rdata")
+
+```
+
+
+Plot of # of up and down regulated probes in the subset
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+meltSummary <- melt(summary)
+
+colnames(meltSummary)<-c("Contrast","Direction","Probes")
+
+meltSummary$Direction <- factor( meltSummary$Direction, levels = c("up","down"))
+
+meltSummary <- meltSummary%>%
+  arrange(Contrast)%>%
+  mutate(Time = as.factor(c(rep("3",2),rep("8",2),rep("24",2))))
+
+meltSummary$Time <- factor( meltSummary$Time, levels = c("3","8","24"))
+
+library(ggplot2)
+ggplot(meltSummary,aes(x=Time, y = Probes))+
+  geom_point(aes(color=Direction),size=4)+
+  geom_line(aes(group=Direction, color = Direction), size = 1)+
+  facet_wrap(~Direction)+
+  scale_color_manual(values=c("red", "green"))+
+  theme_classic()
+
+
+write.table(meltSummary, file="subset_vaginal_explant_microarray/meltSummaryData.txt")
+
+```
+
+
+V186 vs Mock at 3hr
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#repeat for coefs 2
+tt1<-topTable(fit2,coef="V186.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
+
+
+selected1<-rownames(tt1) #selecting the probes of interest
+
+#from the expressedProbes.lumi batch, select just the samples #corresponding to the corresponding coefs (time=24, treatment not SD90)
+
+esetSel1<-expressedProbes.lumi[selected1,targets$Time=="3"]
+
+#To have informative names along the bottom of the heatmap,replace #the true Sample Names(numbers)with their corresponding treatment.
+#i.e. look at the rows in expressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
+
+colnames(exprs(esetSel1))<-paste(pData(expressedProbes.lumi)[colnames(esetSel1),"Treatment"],
+
+#make labels for the bottom that have the tissue ID and treatment
+
+pData(expressedProbes.lumi)[colnames(esetSel1),"TissueID"],sep= " ")
+
+heatmap(exprs(esetSel1))
+
+```
+
+V186 vs Mock at 8hr only has two probes so I can't make a heat map.
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+#repeat for coefs 2
+tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
+
+
+```
+
+V186 vs mock at 24hr
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+#and coef3
+tt3<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
+
+selected3<-rownames(tt3) #selecting the probes of interest
+
+esetSel3<-expressedProbes.lumi[selected3,targets$Time=="24"& targets$Treatment !="SD90" ]
+
+
+
+colnames(exprs(esetSel3))<-paste(pData(expressedProbes.lumi)[colnames(esetSel3),"Treatment"],
+                                 pData(expressedProbes.lumi)[colnames(esetSel3),"TissueID"],sep= " ")
+
+heatmap(exprs(esetSel3))
+```
+
+
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+subsetTTList<-list(tt1, tt2,tt3)
+subset_ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
+
+save(subset_ProbeIDandSymbol, file="subset_vaginal_explant_microarray/subset_ProbeIDandSymbol.Rda")
+
+#function to get short versions of the tt's and include
+#probeID, entrez and symbols
+
+getInteresting <- function(df){
+short<-df[,c("logFC","adj.P.Val")]
+  short$ProbeID<-rownames(short)
+  rownames(short)<- NULL
+  
+  merge(subset_ProbeIDandSymbol,short, by = "ProbeID")
+ 
+}
+
+
+subset_shortTTlist<-lapply(subsetTTList,FUN=getInteresting)
+
+names(subset_shortTTlist) <-c("subset_V186.3","subset_V186.8","subset_V186.24")
+
+#functions to get the up and down regulated probes
+
+getUP<-function(df){
+  df%>%
+    filter(logFC>0)%>%
+    select(ENTREZ_GENE_ID, logFC, adj.P.Val)
+}
+
+
+getDOWN<-function(df){
+  df%>%
+    filter(logFC<0)%>%
+    select(ENTREZ_GENE_ID, logFC, adj.P.Val)
+}
+
+
+#get upreg
+subsetV186UP<-lapply(subset_shortTTlist,FUN=getUP)
+#get downreg      
+subsetV186DOWN<-lapply(subset_shortTTlist,FUN=getDOWN)
+
+
+#mapply looping over both list itself and the list names to name the txt files
+
+mapply(write.table,subsetV186UP,file=paste("subset_vaginal_explant_microarray",names(subsetV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
+
+mapply(write.table,subsetV186DOWN,file=paste("subset_vaginal_explant_microarray",names(subsetV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
+```
+
+
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+
+### NO hits for subsetV186.8 DOWN or subsetV186.3DOWN
+
+subsetGeneFolder <- "subset_vaginal_explant_microarray/INNATE DB RESULTS/geneSpreadsheets"
+
+subsetGeneFiles <- list.files(subsetGeneFolder)
+
+subsetGeneFilesPath<-paste(subsetGeneFolder, "/",subsetGeneFiles, sep="")
+
+
+subsetGeneIDBdata <- lapply(subsetGeneFilesPath, read.delim, sep="\t", header=TRUE)
+
+names(subsetGeneIDBdata)<-str_replace(subsetGeneFiles,pattern=".txt",replacement="")
+
+
+shortSubsetGeneIDBdata<-lapply(subsetGeneIDBdata, 
+  FUN = select, entrez, name,fullname, goTerms,   cerebralLocalization, Fold.Change..cond_1., P.Value..cond_1.)
+
+
+#write this out for Florian
+
+shortSubsetGeneIDBdata[[3]]$entrez<-as.factor(shortSubsetGeneIDBdata[[3]]$entrez)
+
+shortSubsetGeneIDBdata[[4]]$entrez<-as.factor(shortSubsetGeneIDBdata[[4]]$entrez)
+
+
+forExcelShortGeneIDBdata<-bind_rows(shortSubsetGeneIDBdata, .id="Treatment")
+
+#Probes that dont have a goTerm at all. They will get removed later on...
+y<-forExcelShortGeneIDBdata[forExcelShortGeneIDBdata$goTerms == "",]
+
+
+#I found the following way to split the Go terms into varying numbers of columns here: http://stackoverflow.com/questions/15056456/split-strings-into-columns-in-r-where-each-string-has-a-potentially-different-nu
+
+
+#split on #
+splitGoTerms<-strsplit(forExcelShortGeneIDBdata$goTerms, "#")
+
+
+## find the largest element
+maxLen<-max(sapply(splitGoTerms,length))
+
+
+# fill in any blanks. The t() is to transpose the return from sapply
+splitGoTerms <- 
+t(sapply(splitGoTerms, function(x)
+      # append to x, NA's.  Note that if (0 == (maxLen - length(x))), then no NA's are appended 
+      c(x, rep(NA, maxLen - length(x)))
+  ))
+
+
+
+forExcelShortGeneIDBdata<-cbind(forExcelShortGeneIDBdata,splitGoTerms)
+
+#now I have the multiple GOID|Term|Category entries for each entrez split into different columns. Now I need to melt so that each of those is on a different row and the id columns (Treatment, etc)are repeated in their columns
+
+
+
+forExcelShortGeneIDBdata<-forExcelShortGeneIDBdata %>%
+  select(-goTerms)%>%
+  melt(id.vars=c("Treatment","entrez","name","fullname","cerebralLocalization","Fold.Change..cond_1.","P.Value..cond_1."),value.name = "GOid_Term_Cat")
+
+
+#now split based on the | so the GOID, Term and Category are in different columns
+
+t<-forExcelShortGeneIDBdata$GOid_Term_Cat%>%
+  colsplit(pattern = "\\|", names = c("GO_Id","GO_term", "GO_category"))
+
+forExcelShortGeneIDBdata<-forExcelShortGeneIDBdata %>%
+  select(-c(GOid_Term_Cat,variable)) %>%
+  cbind(t)%>%
+  arrange(Treatment,name)
+
+#There are many rows where there are blanks in the GO_Id, GO_term and GO_category columns. This is an artifact from the step where I split the goTerms column into multiple columns.
+
+#The number of columns created was based on the maximum number of splits that was made. The gene that had that max number will have an entry in every one of those columns, but the genes that had less than the max number of goTerms just have blanks in the columns above which they had entries to fill them.
+
+# Ex) The max # of entries was 135 so 135 columns were created to accomodate that. If gene X had only 46 goTerm entries, it will have blanks in its row for columns 47-135.
+
+#When the data gets melted, those blanks in different columns in a single row become blanks in multiple rows in one column. 
+
+
+#to remove those blanks I will subset the df to include just the rows that do NOT == "" (blank)in the GO_Id column
+
+##### NOTE  The one DE probe for V186.8DOWN gets filtered out at this next step because it didn't have any GO id to begin with. Neither did 92 others, (all from V186.24 UP and DOWN). They are mostly hypothetical/pseduogenes/putative and have "unknown" listed for cerebral localization.
+
+
+forExcelShortGeneIDBdata<- forExcelShortGeneIDBdata[!(forExcelShortGeneIDBdata$GO_Id == ""),]
+
+
+
+write.table(forExcelShortGeneIDBdata, file = "subset_vaginal_explant_microarray/forExcelShortGeneIDBdata.txt", sep = "\t", row.names=FALSE)
+
+
