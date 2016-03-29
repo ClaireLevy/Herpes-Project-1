@@ -10,14 +10,13 @@ We used the Qiagen RNeasy fibrous tissue kit to extract and purify the RNA. We u
 
 A companion study using the same scheme but with immortalized lines of primary vaginal epithelial cells from three donors was analyzed by different methods, but I have included an analysis here that I did using the raw microarray data from that sample and the same analysis as for the explant study. File associated with this study refer to "vaginal_cell" or "CELLS" to differentiate from the explant study. For this study, (epithelial cells ony) the 0.1 MOI was 800,000 PFU per flask.
 
-###Data analysis
-* R version 3.1.2 (2014-10-31)
-* lumi_2.18.0
-* Biobase_2.26.0
-* BiocGenerics_0.12.1
-* limma_3.22.7
+#Package verions
+`r SessionInfo()` is at the end of the markdown file
+
 
 #Workflow
 * lumi: read in raw data, background correct, VST transform, robust spline normalize, QC, 
 * filter by detection p values
 * limma: create model matrix and contrasts matrix, fit models to probes.
+* InnateDB GO and Pathway overrepresentation anaylses
+* CAMERA gene set testing
