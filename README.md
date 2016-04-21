@@ -1,5 +1,4 @@
 ### Herpes-Project-1 "Project 1: Incident HSV-2 and genital health in Kenyan adolescent girls: an inception cohort"
-Code for analysis of vaginal explant microarray data
 
 ###Project outline
   Vaginal Explant Enfection Experiment
