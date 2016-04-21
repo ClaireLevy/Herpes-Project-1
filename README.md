@@ -1,6 +1,7 @@
 ### Herpes-Project-1 "Project 1: Incident HSV-2 and genital health in Kenyan adolescent girls: an inception cohort"
 
-###Project outline
+###Project outline\
+
  ## Vaginal Explant Enfection Experiment
   
   We infected vaginal biopsy explants from 7 donors with two strains of HSV-2 (SD90 from David Knipe's lab and V186 from David Koelle's lab). We also did a Mock infection on an explant from each donor. In the code, these treatments are referred to as SD90, V186 and Mock. Donors are identified by a unique 3 digit TissueID.
