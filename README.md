@@ -1,7 +1,7 @@
 ### Herpes-Project-1 "Project 1: Incident HSV-2 and genital health in Kenyan adolescent girls: an inception cohort"
 
 ###Project outline
-  Vaginal Explant Enfection Experiment
+ ## Vaginal Explant Enfection Experiment
   
   We infected vaginal biopsy explants from 7 donors with two strains of HSV-2 (SD90 from David Knipe's lab and V186 from David Koelle's lab). We also did a Mock infection on an explant from each donor. In the code, these treatments are referred to as SD90, V186 and Mock. Donors are identified by a unique 3 digit TissueID.
   
@@ -15,7 +15,7 @@
   
   We used the Qiagen RNeasy fibrous tissue kit to extract and purify the RNA. We used the NuGEN Ovation PicoSL WTA System V2 to make and amplify cDNA and the NuGEN Encore BiotinIL Module to label the cDNA with biotin. The samples were sent to the FHCRC genomics core facility to be spotted on Illumina Human HT12 v4 beadchip arrays. Samples (one sample is a single TissueID x Treatment x Timepoint) were named with random numbers from 6-69. 
 
-Human Vaginal Epithelial Cells infection experiment
+##Human Vaginal Epithelial Cells infection experiment
 
 A companion study using the same viruses and timepoints but with immortalized lines of primary vaginal epithelial cells from three donors (HVE 1, HVE 3, HVE 4) was also done, prior to the explant experiment. It was originally analyzed by different methods, but I reanalyzed it using the same methods as for the explants, starting from the the raw microarray data that Lamar Fleming got from the FHCRC core services. 
 
