@@ -1,9 +1,11 @@
-.Rproj.user
-.Rhistory
+*.Rproj.user
+*.Rhistory
 *.RData
 *.Rdata
 *.txt
 *.RProj
-topGO and biomaRt-Shortcut.lnk
-vaginal_explant_Illumina/
+*.lnk
+vaginal_explant_Illumina/*
+*.db
+
 
