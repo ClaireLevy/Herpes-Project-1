@@ -55,7 +55,7 @@ library(pander)
 
 ##Expression set to use
 
-load("expressedProbes.lumi.Rdata")
+load("RdataOutput/expressedProbes.lumi.Rdata")
 
 
 y<-exprs(expressedProbes.lumi)
@@ -63,18 +63,28 @@ y<-exprs(expressedProbes.lumi)
 #Using the DE probes from the epithelial cell MA as the set to compare against.
 
 
-load("CELLStt3.Rdata")#top table for cells V186.24 DE probes
-load("design.Rdata")#explant design matrix
+load("RdataOutput/CELLStt3.Rdata")#top table for cells V186.24 DE probes
+
+load("RdataOutput/design.Rdata")#explant design matrix
 
 ###Using CELLStt3 probes as the gene set (so just V186.24 cells data, no other time points and not split into up and down)
 
-#set up the gene set for index
-gene.set<-list(as.character(CELLStt3$ENTREZ_GENE_ID))
+#set up the gene set for index. There are 11076 probes (8873 unique ones) BUT all of the PROBE_ID's (ILMN_xxx) are unique. This means that there are multiple PROBE_ID's per ENTREZ.
 
-#IDs from eset
-identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+gene.set<-list(unique(as.character(CELLStt3$ENTREZ_GENE_ID)))
+
+
+#IDs from eset: entrez ids from the data I'm analyzing (not the pre-determined gene set)
+
+
+identifiers = unique(as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"]))
+
 
 #make index with CELLStt3 probes and eset IDs
+#"list of integer vectors, each vector containing the #indices of a gene set in the vector identifiers."
+
+
 index<-ids2indices(gene.sets = gene.set, identifiers = identifiers)
 
 #define a matrix of the contrast that you want the results for
@@ -96,8 +106,8 @@ Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3
 ###### Repeat test but for gene sets, use DE probes from all v186 CELLS data, separated by direction of change and time point.
 
 
-load("CELLSV186UP.Rdata")#list of UP reg DE probes for V186 3hr 8 hr 24hr
-load("CELLSV186DOWN.Rdata")#list of DOWN reg DE probes for V186 3hr 8 hr 24hr
+load("RdataOutput/CELLSV186UP.Rdata")#list of UP reg DE probes for V186 3hr 8 hr 24hr
+load("RdataOutput/CELLSV186DOWN.Rdata")#list of DOWN reg DE probes for V186 3hr 8 hr 24hr
 
 
 ##add directional annotation to CELLS list. These are lists of DE probes for the 3 time points, V186 only.
@@ -111,7 +121,7 @@ CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
 
 #Extract just the ENTREZ IDs and use the resulting list as the gene.sets
 
-entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) as.character(x$ENTREZ_GENE_ID))
+entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) unique(as.character(x$ENTREZ_GENE_ID)))
 
 
 ```
@@ -125,7 +135,8 @@ Result from the second test
 y<-exprs(expressedProbes.lumi)
 
 #IDs from eset
-identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+identifiers = unique(as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"]))
+
 
 
 #find indices of overlaps
@@ -139,5 +150,7 @@ contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
 V186cameraResult<-camera(y = y, index = index2, design = design, contrast = contr )
 
 pander(V186cameraResult)
+
+sessionInfo()
 
 ```
