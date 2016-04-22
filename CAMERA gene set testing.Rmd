@@ -72,13 +72,13 @@ load("RdataOutput/design.Rdata")#explant design matrix
 #set up the gene set for index. There are 11076 probes (8873 unique ones) BUT all of the PROBE_ID's (ILMN_xxx) are unique. This means that there are multiple PROBE_ID's per ENTREZ.
 
 
-gene.set<-list(unique(as.character(CELLStt3$ENTREZ_GENE_ID)))
+gene.set<-list(as.character(CELLStt3$PROBE_ID))
 
 
 #IDs from eset: entrez ids from the data I'm analyzing (not the pre-determined gene set)
 
 
-identifiers = unique(as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"]))
+identifiers = as.character(fData(expressedProbes.lumi)[,"PROBE_ID"])
 
 
 #make index with CELLStt3 probes and eset IDs
