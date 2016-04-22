@@ -48,6 +48,9 @@ Here is the test result
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
+
+####  SEE CAMERA_gene_set_testing_README for more on this process #####
+
 library(limma)
 library(lumi)
 library(pander)
@@ -57,6 +60,8 @@ library(pander)
 
 load("RdataOutput/expressedProbes.lumi.Rdata")
 
+## design matrix is the same as for the explant analysis
+load("RdataOutput/design.Rdata")
 
 y<-exprs(expressedProbes.lumi)
 
@@ -72,13 +77,12 @@ load("RdataOutput/design.Rdata")#explant design matrix
 #set up the gene set for index. There are 11076 probes (8873 unique ones) BUT all of the PROBE_ID's (ILMN_xxx) are unique. This means that there are multiple PROBE_ID's per ENTREZ.
 
 
-gene.set<-list(unique(as.character(CELLStt3$TargetID)))
-
+gene.set<-list(as.character(CELLStt3$PROBE_ID))
 
 
 
 #IDs from eset: entrez ids from the data I'm analyzing (not the pre-determined gene set)
-identifiers = as.character(unique(fData(expressedProbes.lumi)[,"TargetID"]))
+identifiers = as.character(fData(expressedProbes.lumi)[,"PROBE_ID"])
 
 
 
@@ -107,10 +111,37 @@ Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3
 
 ###### Repeat test but for gene sets, use DE probes from all v186 CELLS data, separated by direction of change and time point.
 
+#Prepare the gene sets by getting the top tables for CELLSV186 UP and DOWN reg DE probes from each timepoint all into a single list.
 
-load("RdataOutput/CELLSV186UP.Rdata")#list of UP reg DE probes for V186 3hr 8 hr 24hr
-load("RdataOutput/CELLSV186DOWN.Rdata")#list of DOWN reg DE probes for V186 3hr 8 hr 24hr
+#This is a list of the top tables for the 3 time points (in order 3, 8 and 24)from the CELLS experiment analysis.
 
+load("RdataOutput/CELLSttList.Rdata")
+
+#add names to the dfs in the list so I don't get confused
+names(CELLSttList) <-c("CELLS_V186.3","CELLS_V186.8","CELLS_V186.24")
+
+#functions to separate out the the up and down regulated probes, based on the sign of the data in the logFC column.
+
+#at the same time, select just the column I'm interested in.
+getUP<-function(df){
+  df%>%
+    filter(logFC>0)%>%
+    select(PROBE_ID)
+}
+
+
+getDOWN<-function(df){
+  df%>%
+    filter(logFC<0)%>%
+    select(PROBE_ID)
+}
+
+
+#get upreg
+CELLSV186UP<-lapply(CELLSttList,FUN=getUP)
+
+#get downreg      
+CELLSV186DOWN<-lapply(CELLSttList,FUN=getDOWN)
 
 ##add directional annotation to CELLS list. These are lists of DE probes for the 3 time points, V186 only.
 
@@ -121,9 +152,9 @@ names(CELLSV186DOWN)<-paste(names(CELLSV186DOWN), "DOWN", sep= "")
 #make it into one list
 CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
 
-#Extract just the ENTREZ IDs and use the resulting list as the gene.sets
+#Extract just the PROBE_IDs in the appropriate character format.
 
-entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) unique(as.character(x$ENTREZ_GENE_ID)))
+PROBE_ID_CELLSV186DE<-lapply(CELLSV186DE, FUN=function(x)as.character(x$PROBE_ID))
 
 
 ```
@@ -137,12 +168,13 @@ Result from the second test
 y<-exprs(expressedProbes.lumi)
 
 #IDs from eset
-identifiers = unique(as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"]))
+identifiers = as.character(fData(expressedProbes.lumi)[,"PROBE_ID"])
 
 
 
-#find indices of overlaps
-index2<-ids2indices(gene.sets = entrezCELLSV186DE, identifiers = identifiers)
+#I am using my list of DE probes from the 3 different timepoints for CELLSV186 UP and DOWN regulated as my gene sets here. I made this list above.
+
+index2<-ids2indices(gene.sets = PROBE_ID_CELLSV186DE, identifiers = identifiers)
 
 
 #define a matrix of the contrast that you want the results for
