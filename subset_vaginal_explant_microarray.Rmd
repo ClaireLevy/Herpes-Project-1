@@ -24,7 +24,7 @@ library(ggplot2)
 #READ IN RAW MICROARRAY DATA FINAL REPORT #######
 #data from shared resources
 
-RAW<-"vaginal_explant_Illumina\\2015_11_10\\GenomeStudioProject\\SeanHughes_HumanHT12v4_151112\\2015.11.12smhughesFinalReport.txt"
+RAW<-"vaginal_explant_microarray_Illumina\\2015_11_10\\GenomeStudioProject\\SeanHughes_HumanHT12v4_151112\\2015.11.12smhughesFinalReport.txt"
 
 RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = '.',
                 parseColumnName = FALSE, checkDupId = FALSE,
@@ -60,7 +60,7 @@ subset_RAW.lumi<-RAW.lumi[,c("8", "13", "14", "16", "17", "18", "20", "24", "27"
 
 #read in phenoData (does NOT include any phenoData for non-explant samples)
 
-pData<- read.table("input/explantMicroarrayPhenoData.txt",sep="\t",row.names=1, header=TRUE)
+pData<- read.table("PhenoDataInput/explantMicroarrayPhenoData.txt",sep="\t",row.names=1, header=TRUE)
 
 
 
@@ -417,15 +417,15 @@ subsetV186DOWN<-lapply(subset_shortTTlist,FUN=getDOWN)
 
 #mapply looping over both list itself and the list names to name the txt files
 
-mapply(write.table,subsetV186UP,file=paste("subset_vaginal_explant_microarray",names(subsetV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
+mapply(write.table,subsetV186UP,file=paste("subset_vaginal_explant_microarray/IDBinput/",names(subsetV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
 
-mapply(write.table,subsetV186DOWN,file=paste("subset_vaginal_explant_microarray",names(subsetV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
+mapply(write.table,subsetV186DOWN,file=paste("subset_vaginal_explant_microarray/IDBinput/",names(subsetV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
 ```
 
 
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
-
+## READING IN GENE DATA (NOT ORA)FROM IDB
 
 ### NO hits for subsetV186.8 DOWN or subsetV186.3DOWN
 
@@ -518,5 +518,30 @@ forExcelShortGeneIDBdata<- forExcelShortGeneIDBdata[!(forExcelShortGeneIDBdata$G
 
 
 write.table(forExcelShortGeneIDBdata, file = "subset_vaginal_explant_microarray/forExcelShortGeneIDBdata.txt", sep = "\t", row.names=FALSE)
+
+
+
+
+##### PATHWAY ORA FROM IDB ##########
+
+## I accessed IDB on 1Apr16 to get these data
+
+
+## Data input for IDB are the files in:
+#J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\subset_vaginal_explant_microarray\IDBinput
+
+## NO HITS for Pathway ORA for the following data sets that I put into IDB
+#subset_V186.3DOWN
+#subset_V186.3UP
+#subset_V186.8DOWN
+#subset_V186.8UP
+
+#I got hits for V186.24 UP and DOWN The output .txt files are here:
+
+#J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\subset_vaginal_explant_microarray\INNATE DB RESULTS\oraSpreadsheets
+
+#I put the files into excel for FH and they are here:
+
+#J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\subset_vaginal_explant_microarray\INNATE DB RESULTS\Excel for FH based on oraSpreadsheets
 
 

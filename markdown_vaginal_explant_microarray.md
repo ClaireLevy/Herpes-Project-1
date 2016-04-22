@@ -147,32 +147,140 @@ Expression data: The same expression set that I used for DE analysis above (`exp
 
 Gene set: Probes from the epithelial cell ("CELLS") microarray that I found to be DE in the V186 infected, 24 hr timepoint(V186.24) condition.
 
-    ##   NGenes Correlation Direction      PValue
-    ## 1  13476 0.001320977        Up 0.000145382
+<table>
+<colgroup>
+<col width="12%" />
+<col width="19%" />
+<col width="16%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">NGenes</th>
+<th align="center">Correlation</th>
+<th align="center">Direction</th>
+<th align="center">PValue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">9434</td>
+<td align="center">0.004606</td>
+<td align="center">Up</td>
+<td align="center">0.0001851</td>
+</tr>
+</tbody>
+</table>
 
-Second camera test: Same design and contrast matrix as for prev. test.
+Test 2
+------
 
-Gene set: Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
+Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down.
 
-    ## List of 6
-    ##  $ CELLS_V186.3UP   : chr [1:321] "167153" "2152" "7082" "3280" ...
-    ##  $ CELLS_V186.8UP   : chr [1:335] "64167" "3280" "100132593" "56005" ...
-    ##  $ CELLS_V186.24UP  : chr [1:4926] NA "9940" "651450" "79724" ...
-    ##  $ CELLS_V186.3DOWN : chr [1:97] "445" "9540" "83658" "163" ...
-    ##  $ CELLS_V186.8DOWN : chr [1:79] "8148" "254427" "51706" "8500" ...
-    ##  $ CELLS_V186.24DOWN: chr [1:6150] "473" "55973" "2152" "2286" ...
+Result from the second test
 
-Result from the second camera test
+<table>
+<caption>Table continues below</caption>
+<colgroup>
+<col width="33%" />
+<col width="12%" />
+<col width="19%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">NGenes</th>
+<th align="center">Correlation</th>
+<th align="center">Direction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>CELLS_V186.24DOWN</strong></td>
+<td align="center">5930</td>
+<td align="center">0.04091</td>
+<td align="center">Up</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>CELLS_V186.24UP</strong></td>
+<td align="center">3504</td>
+<td align="center">0.04293</td>
+<td align="center">Down</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>CELLS_V186.3DOWN</strong></td>
+<td align="center">95</td>
+<td align="center">0.05727</td>
+<td align="center">Up</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>CELLS_V186.3UP</strong></td>
+<td align="center">314</td>
+<td align="center">0.04873</td>
+<td align="center">Down</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>CELLS_V186.8UP</strong></td>
+<td align="center">333</td>
+<td align="center">0.0555</td>
+<td align="center">Down</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>CELLS_V186.8DOWN</strong></td>
+<td align="center">78</td>
+<td align="center">0.09047</td>
+<td align="center">Up</td>
+</tr>
+</tbody>
+</table>
 
-    ##                   NGenes Correlation Direction      PValue         FDR
-    ## CELLS_V186.24DOWN   9236 0.007300659        Up 0.001040406 0.006242434
-    ## CELLS_V186.24UP     6224 0.026346954      Down 0.230405273 0.649860260
-    ## CELLS_V186.8UP      1890 0.038714935      Down 0.389264085 0.649860260
-    ## CELLS_V186.3UP       513 0.036349376      Down 0.433240173 0.649860260
-    ## CELLS_V186.8DOWN    1477 0.055492228      Down 0.558580508 0.670296610
-    ## CELLS_V186.3DOWN     133 0.031153221        Up 0.835392607 0.835392607
-
-Session info
+<table>
+<colgroup>
+<col width="33%" />
+<col width="12%" />
+<col width="12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">PValue</th>
+<th align="center">FDR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>CELLS_V186.24DOWN</strong></td>
+<td align="center">0.01197</td>
+<td align="center">0.07179</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>CELLS_V186.24UP</strong></td>
+<td align="center">0.2867</td>
+<td align="center">0.5387</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>CELLS_V186.3DOWN</strong></td>
+<td align="center">0.4069</td>
+<td align="center">0.5387</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>CELLS_V186.3UP</strong></td>
+<td align="center">0.42</td>
+<td align="center">0.5387</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>CELLS_V186.8UP</strong></td>
+<td align="center">0.4489</td>
+<td align="center">0.5387</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>CELLS_V186.8DOWN</strong></td>
+<td align="center">0.7301</td>
+<td align="center">0.7301</td>
+</tr>
+</tbody>
+</table>
 
     ## R version 3.1.2 (2014-10-31)
     ## Platform: x86_64-w64-mingw32/x64 (64-bit)
