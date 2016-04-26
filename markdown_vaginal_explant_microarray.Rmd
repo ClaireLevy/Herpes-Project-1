@@ -23,7 +23,7 @@ library(ggplot2)
 #READ IN RAW MICROARRAY DATA FINAL REPORT #######
 #data from shared resources
 
-RAW<-"vaginal_explant_Illumina\\2015_11_10\\GenomeStudioProject\\SeanHughes_HumanHT12v4_151112\\2015.11.12smhughesFinalReport.txt"
+RAW<-"vaginal_explant_microarray_Illumina\\2015_11_10\\GenomeStudioProject\\SeanHughes_HumanHT12v4_151112\\2015.11.12smhughesFinalReport.txt"
 
 RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = '.',
                 parseColumnName = FALSE, checkDupId = FALSE,
@@ -37,7 +37,7 @@ RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = 
                 verbose = TRUE)
 
 
-save(RAW.lumi, file="output/RAW.lumi.Rdata")
+save(RAW.lumi, file="RdataOutput/RAW.lumi.Rdata")
 ```
 
 EXPERIMENT NOTES
@@ -82,7 +82,7 @@ RAW.lumi<-RAW.lumi[,-c(1:5,32,58)]#32 and 58 are the indices for
 
 #read in phenoData (does NOT include any phenoData for non-explant samples)
 
-pData<- read.table("input/explantMicroarrayPhenoData.txt",
+pData<- read.table("phenoDataInput/explantMicroarrayPhenoData.txt",
                        sep="\t",row.names=1, header=TRUE)
 
 
@@ -144,7 +144,7 @@ complete.RAW.lumi<-new("LumiBatch", exprs=exprs(RAW.lumi),phenoData=adf,
                   detection=detection(RAW.lumi),
                   featureData=featureData(RAW.lumi))
 
-save(complete.RAW.lumi,file="output/complete.RAW.lumi.Rdata")
+save(complete.RAW.lumi,file="RdataOutput/complete.RAW.lumi.Rdata")
 ```
 
  SOME PLOTS OF NON NORMALIZED DATA:
@@ -188,7 +188,7 @@ NTB.complete.RAW.lumi<-lumiN(TB.complete.RAW.lumi,method="rsn")
 
 QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
 
-save(QNTB.complete.RAW.lumi, file = "output/QNTB.complete.RAW.lumi.Rdata")
+save(QNTB.complete.RAW.lumi, file = "RdataOutput/QNTB.complete.RAW.lumi.Rdata")
 ```
 
 PLOTS OF NORMALIZED DATA 
@@ -279,7 +279,7 @@ Number of probes removed by filtering:
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)[1]-dims(expressedProbes.lumi)[1]
 
-load("output/expressedProbes.lumi.Rdata")
+load("RdataOutput/expressedProbes.lumi.Rdata")
 ```
 
 The design matrix includes a combined treatment + timepoint parameter (`r "Treat" `) and a donor parameter (`r "TissueID" `).
@@ -298,7 +298,7 @@ TissueID<- factor(targets$TissueID)
 Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
 
 design<-model.matrix (~0+Treat+TissueID)
-save(design, file="output/design.Rdata")
+save(design, file="RdataOutput/design.Rdata")
 ```
 
 Then we choose the comparisons we want to analyze. I compared each treatment + timepoint condition with the corresponding mock infection in the same donor. This gives 6 contrasts to analyze:
@@ -321,7 +321,7 @@ Then we choose the comparisons we want to analyze. I compared each treatment + t
 ####################### FIT MODEL TO PROBES
 
 fit <- lmFit(expressedProbes.lumi,design=design)
-save(fit, file="output/fit.Rdata")
+save(fit, file="RdataOutput/fit.Rdata")
 
 #Now we can make any comparisons
 #between the experimental conditions
@@ -350,7 +350,7 @@ fit2<-contrasts.fit(bothcm, fit=fit)
 #compute diff exprsn
 fit2 <-eBayes(fit2)
 
-save(fit2, file= "output/fit2eBayes.Rdata")
+save(fit2, file= "RdataOutput/fit2eBayes.Rdata")
 ```
 
 After fitting the contrasts to the model using our design matrix, we can see how many probes are up and down-regulated for each contrast, based on a p-value cut-off of 0.05 and a log-fold-change cut-off of 0.5.
@@ -363,7 +363,7 @@ After fitting the contrasts to the model using our design matrix, we can see how
 results <- decideTests(fit2,method="separate", adjust.method="BH",
                       p.value=0.05, lfc=0.5)
 
-save(results, file= "output/decideTestsResults.Rdata")
+save(results, file= "RdataOutput/decideTestsResults.Rdata")
 
 #turn the results matrix into a data frame and make the
 #probeID a real column and remove the rownames
@@ -376,7 +376,7 @@ rownames(resultsDF)<-NULL
 library(reshape2)
 
 resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
-save(resultsDFmelt,file = "output/resultsDFmelt.Rdata")
+save(resultsDFmelt,file = "RdataOutput/resultsDFmelt.Rdata")
 
 
 #number of up and down regulated probes based on 
@@ -389,7 +389,7 @@ summary<-resultsDFmelt %>%
 library(pander)
 pander(summary)
 
-save(summary, file = "output/summary.Rdata")
+save(summary, file = "RdataOutput/summary.Rdata")
 
 ```
 
@@ -622,124 +622,21 @@ forExcelShortgeneIDBdata<- forExcelShortGeneIDBdata[!(forExcelShortGeneIDBdata$G
 
 
 
-write.table(forExcelShortGeneIDBdata, file = "INNATE DB RESULTS/forExcelShortGeneIDBdata.txt", sep = "\t", row.names=FALSE)
+write.table(forExcelShortGeneIDBdata, file = "INNATE DB RESULTS/Excel for FH from IDB/explant/forExcelShortGeneIDBdata.txt", sep = "\t", row.names=FALSE)
 
 
 
 
 
-##NOTE When I remove the rows that don't have a go ID at the end of hte processing,any row that NEVER had a go ID to begin with also gets removed and we lose all information about that gene. There are ~92 of genes that didn't have a go id even when I read them in, and many are pseudo genes or un-verified 
+##NOTE When I remove the rows that don't have a go ID at the end of the processing,any row that NEVER had a go ID to begin with also gets removed and we lose all information about that gene. There are ~92 of genes that didn't have a go id even when I read them in, and many are pseudo genes or un-verified 
 
 originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 
 
 
-```
-
-
-CAMERA TESTING
-
-The design matrix I used for the `camera` function is the same one that I used for DE analysis above and the contrast matrix is
-
-`contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)`
-
-Expression data: The  same expression set that I used for DE analysis above (`expressedProbes.lumi`).
-
-Gene set: Probes from the epithelial cell ("CELLS") microarray that I found to be DE in the V186 infected, 24 hr timepoint(V186.24) condition.
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-#trying to use camera function for gene set testing. 
-
-##Expression set to use
-load("output/expressedProbes.lumi.Rdata")
-y<-exprs(expressedProbes.lumi)
-
-#Using the DE probes from the epithelial cell MA as the set to compare against.
-
-
-load("output/CELLStt3.Rdata")#top table for cells V186.24 DE probes
-load("output/design.Rdata")#explant design matrix
-
-###Using CELLStt3 probes as the gene set (so just V186.24 cells data, no other time points and not split into up and down)
-
-#set up the gene set for index
-gene.set<-list(as.character(CELLStt3$ENTREZ_GENE_ID))
-
-#IDs from eset
-identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
-
-#make index with CELLStt3 probes and eset IDs
-index<-ids2indices(gene.sets = gene.set, identifiers = identifiers)
-
-#define a matrix of the contrast that you want the results for
-contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
-
-#put arguments into camera
-cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
-
-cameraResult
-```
-
-Second camera test:
-Same design and contrast matrix as for prev. test.
-
-Gene set: 
-Also DE probes from the CELLS experiment, V186 treatment, but they are for all 3 time points (3hr, 8hr, 24hr) and are separated by whether the direction of DE was up or down
-
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-###### Repeat test but for gene sets, use DE probes from all v186 CELLS data, separated by direction of change and time point.
-
-
-load("output/CELLSV186UP.Rdata")#list of UP reg DE probes for V186 3hr 8 hr 24hr
-load("output/CELLSV186DOWN.Rdata")#list of DOWN reg DE probes for V186 3hr 8 hr 24hr
-
-
-##add directional annotation to CELLS list. These are lists of DE probes for the 3 time points, V186 only.
-
-names(CELLSV186UP)<-paste(names(CELLSV186UP), "UP", sep= "")
-
-names(CELLSV186DOWN)<-paste(names(CELLSV186DOWN), "DOWN", sep= "")
-
-#make it into one list
-CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
-
-#Extract just the ENTREZ IDs and use the resulting list as the gene.sets
-
-entrezCELLSV186DE<-lapply(CELLSV186DE, FUN=function(x) as.character(x$ENTREZ_GENE_ID))
-
-str(entrezCELLSV186DE)
-
-```
-
-Result from the second camera test
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-##Expression set to use
-y<-exprs(expressedProbes.lumi)
-
-#IDs from eset
-identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
-
-
-#find indices of overlaps
-index2<-ids2indices(gene.sets = entrezCELLSV186DE, identifiers = identifiers)
-
-
-#define a matrix of the contrast that you want the results for
-contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
-
-#put arguments into camera
-V186cameraResult<-camera(y = y, index = index2, design = design, contrast = contr )
-
-V186cameraResult
-```
-
-
-Session info
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
 sessionInfo()
+```
+
 
 
 
