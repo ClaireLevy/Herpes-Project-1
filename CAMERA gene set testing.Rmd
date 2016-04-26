@@ -24,7 +24,7 @@ The user provides:
 
 * a gene set of interest
 
-## Results
+## How CAMERA works
 
 `camera` looks at how many of the genes that were expressed in the contrast we specified are also in the gene set we provided. The test result gives 
 
@@ -54,6 +54,7 @@ Here is the test result
 library(limma)
 library(lumi)
 library(pander)
+library(dplyr)
 
 
 ##Expression set to use
@@ -81,7 +82,8 @@ gene.set<-list(as.character(CELLStt3$PROBE_ID))
 
 
 
-#IDs from eset: entrez ids from the data I'm analyzing (not the pre-determined gene set)
+#IDs from eset: PROBE_IDs from the data I'm analyzing (not the pre-determined gene set)
+
 identifiers = as.character(fData(expressedProbes.lumi)[,"PROBE_ID"])
 
 
@@ -159,7 +161,7 @@ PROBE_ID_CELLSV186DE<-lapply(CELLSV186DE, FUN=function(x)as.character(x$PROBE_ID
 
 ```
 
-Result from the second test
+
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
@@ -184,6 +186,74 @@ contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
 V186cameraResult<-camera(y = y, index = index2, design = design, contrast = contr )
 
 pander(V186cameraResult)
+```
+
+## Test 3
+Now the Hallmark gene set from MSigDB (prepared for R here: http://bioinf.wehi.edu.au/software/MSigDB/, accessed 22Apr16). Note that ENTREZ_GENE_ID is the ID provided for these gene sets, so I'll have to use that for my identifiers.
+
+More info on the MSigDB gene sets is here: http://software.broadinstitute.org/gsea/msigdb/collections.jsp#H
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+#load the Hallmark gene sets ("Hs.H")
+
+load("MSigDB_gene_sets/human_Hallmark_v5.rdata")
+
+##Expression set to use
+
+y<-exprs(expressedProbes.lumi)
+
+
+#IDs from eset: ENTREZ_IDS from the data I'm analyzing (not the pre-determined gene set). There are some duplicates in there but I am leaving them in for now because I know they will be removed non-randomly. This means less power though I think.
+
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+index3<-ids2indices(gene.sets = Hs.H, identifiers = identifiers)
+
+#define a matrix of the contrast that you want the results for
+contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
+
+#put arguments into camera
+hallmarkGSEA<-camera(y = y, index = index3, design = design, contrast = contr )
+
+pander(head(hallmarkGSEA))
+
+write.csv(hallmarkGSEA, file= "./CAMERA_gene_set_testing_output/hallmarkGSEA.csv")
+
+
+
+```
+
+## Test 4
+Now trying with the immunologic gene sets ("c7") from MSigDB
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+
+#load the immunologic gene sets ("Hs.c7")
+
+load("MSigDB_gene_sets/human_c7_v5.rdata")
+
+##Expression set to use
+
+y<-exprs(expressedProbes.lumi)
+
+
+#IDs from eset: ENTREZ_IDS from the data I'm analyzing (not the pre-determined gene set). There are some duplicates in there but I am leaving them in for now because I know they will be removed non-randomly. This means less power though I think.
+
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+index4<-ids2indices(gene.sets = Hs.c7, identifiers = identifiers)
+
+#define a matrix of the contrast that you want the results for
+contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
+
+#put arguments into camera
+c7GSEA<-camera(y = y, index = index4, design = design, contrast = contr )
+
+pander(head(c7GSEA))
+
+write.csv(c7GSEA, file = "./CAMERA_gene_set_testing_output/c7GSEA.csv")
+
 
 sessionInfo()
 
