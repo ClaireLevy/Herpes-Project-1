@@ -9,7 +9,7 @@ output:
 ---
 This is a subset of the vaginal explant microarray data. We subset for just the four donors that grouped together by hierarchical clustering in the heat map of V186.24 (323, 317,324,318)
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
+```{r load packages,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
 
 library(plyr)
 require(dplyr)
@@ -20,8 +20,8 @@ library(stringr)
 library(ggplot2)
 ```
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide', cache = TRUE}
-#READ IN RAW MICROARRAY DATA FINAL REPORT #######
+```{r read in raw MA data final report,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide', cache = TRUE}
+
 #data from shared resources
 
 RAW<-"vaginal_explant_microarray_Illumina\\2015_11_10\\GenomeStudioProject\\SeanHughes_HumanHT12v4_151112\\2015.11.12smhughesFinalReport.txt"
@@ -43,8 +43,8 @@ RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = 
 
 I am subsetting for just TissueIDs 317 318 323 324 at all time points for V186
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-########### SUBSETTING THE LUMIBATCH 
+```{r subsetting the lumibatch, echo=FALSE,message=FALSE, warning=FALSE}
+
 
 
 #I want samples
@@ -54,7 +54,7 @@ I am subsetting for just TissueIDs 317 318 323 324 at all time points for V186
 
 
 #look at which indices those correspond to
-phenoData(RAW.lumi)$sampleID
+#phenoData(RAW.lumi)$sampleID
 
 subset_RAW.lumi<-RAW.lumi[,c("8", "13", "14", "16", "17", "18", "20", "24", "27", "30", "31", "32", "36", "37", "38", "40", "42", "48", "54", "56", "58", "59", "66", "68")]
 
@@ -134,7 +134,7 @@ save(QNTB.complete.RAW.lumi, file = "subset_vaginal_explant_microarray/QNTB.comp
 
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r filtering echo=FALSE,message=FALSE, warning=FALSE}
 #filtering
             
 detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=7
@@ -152,13 +152,13 @@ expressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
 
 Number of probes in data set before filtering:
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r probes in set prefilter,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)[1]#47323
 ```
 
 Number of probes in data set after filtering:
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r probes in set postfilter, echo=FALSE,message=FALSE, warning=FALSE}
 
 dims(expressedProbes.lumi)[1]
 
@@ -166,7 +166,7 @@ dims(expressedProbes.lumi)[1]
 
 Number of probes removed by filtering:
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r probes removed by filter,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)[1]-dims(expressedProbes.lumi)[1]
 
 save(expressedProbes.lumi, file = "subset_vaginal_explant_microarray/expressedProbes.lumi.Rdata")
@@ -175,9 +175,9 @@ save(expressedProbes.lumi, file = "subset_vaginal_explant_microarray/expressedPr
 
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r targets and design matrix,echo=FALSE,message=FALSE, warning=FALSE}
 
-############### TARGETS AND DESIGN MATRIX 
+
 # see section 9.4.1 and 9.4.2 in the limma users guide
 
 targets<-pData(expressedProbes.lumi)%>%
@@ -233,14 +233,7 @@ save(fit2, file = "subset_vaginal_explant_microarray/fit2eBayes.Rdata")
 
 
 
-#method=separate is same as doing topTable for all coefs separately
 
-results <- decideTests(fit2,method="separate", adjust.method="BH",
-                      p.value=0.05, lfc=0.5)
-
-
-#adj p values <0.05 and lfc >=0.5
-#get the toptable for this contrast
 ```
 
 
@@ -315,7 +308,9 @@ write.table(meltSummary, file="subset_vaginal_explant_microarray/meltSummaryData
 V186 vs Mock at 3hr
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
-#repeat for coefs 2
+
+
+
 tt1<-topTable(fit2,coef="V186.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
 
@@ -341,7 +336,7 @@ heatmap(exprs(esetSel1))
 V186 vs Mock at 8hr only has two probes so I can't make a heat map.
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
-#repeat for coefs 2
+#repeat for coef 2
 tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
 
@@ -369,14 +364,17 @@ heatmap(exprs(esetSel3))
 
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r get top tables for IDB,echo=FALSE,message=FALSE, warning=FALSE}
 
+#combine the dfs
 subsetTTList<-list(tt1, tt2,tt3)
+
+#get the fdata for those probes 
 subset_ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
 
 save(subset_ProbeIDandSymbol, file="subset_vaginal_explant_microarray/subset_ProbeIDandSymbol.Rda")
 
-#function to get short versions of the tt's and include
+#function to get short versions ( i.e. not all the cols) of the tt's and include
 #probeID, entrez and symbols
 
 getInteresting <- function(df){
@@ -388,9 +386,10 @@ short<-df[,c("logFC","adj.P.Val")]
  
 }
 
-
+#apply the function 
 subset_shortTTlist<-lapply(subsetTTList,FUN=getInteresting)
 
+#add names to list
 names(subset_shortTTlist) <-c("subset_V186.3","subset_V186.8","subset_V186.24")
 
 #functions to get the up and down regulated probes
@@ -424,7 +423,7 @@ mapply(write.table,subsetV186DOWN,file=paste("subset_vaginal_explant_microarray/
 
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r read in idb gene data,echo=FALSE,message=FALSE, warning=FALSE}
 ## READING IN GENE DATA (NOT ORA)FROM IDB
 
 ### NO hits for subsetV186.8 DOWN or subsetV186.3DOWN
@@ -444,7 +443,9 @@ names(subsetGeneIDBdata)<-str_replace(subsetGeneFiles,pattern=".txt",replacement
 shortSubsetGeneIDBdata<-lapply(subsetGeneIDBdata, 
   FUN = select, entrez, name,fullname, goTerms,   cerebralLocalization, Fold.Change..cond_1., P.Value..cond_1.)
 
+```
 
+```{r clean idb gene data output,echo=FALSE,message=FALSE, warning=FALSE}
 #write this out for Florian
 
 shortSubsetGeneIDBdata[[3]]$entrez<-as.factor(shortSubsetGeneIDBdata[[3]]$entrez)
@@ -514,15 +515,20 @@ forExcelShortGeneIDBdata<-forExcelShortGeneIDBdata %>%
 
 
 forExcelShortGeneIDBdata<- forExcelShortGeneIDBdata[!(forExcelShortGeneIDBdata$GO_Id == ""),]
+```
 
 
+
+```{r write out  CLEAN idb gene data output,echo=FALSE,message=FALSE, warning=FALSE}
 
 write.table(forExcelShortGeneIDBdata, file = "subset_vaginal_explant_microarray/forExcelShortGeneIDBdata.txt", sep = "\t", row.names=FALSE)
 
 
+```
 
 
-##### PATHWAY ORA FROM IDB ##########
+```{r PATHWAY ORA FROM IDB,echo=FALSE,message=FALSE, warning=FALSE}
+
 
 ## I accessed IDB on 1Apr16 to get these data
 
@@ -540,8 +546,49 @@ write.table(forExcelShortGeneIDBdata, file = "subset_vaginal_explant_microarray/
 
 #J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\subset_vaginal_explant_microarray\INNATE DB RESULTS\oraSpreadsheets
 
-#I put the files into excel for FH and they are here:
+#I put combined the UP and DOWN data into a single excel file (with a "direction column") FH and they are here:
 
 #J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\subset_vaginal_explant_microarray\INNATE DB RESULTS\Excel for FH based on oraSpreadsheets
+
+# 21Sept16 
+#FH wants pathway data like I did above, but NOT separated for UP and DOWN regulated. By inputting both up and down together, we'll get a SINGLE p-value for whichever pathways come up. 
+
+#Here I will write to .txt data frames from the list called subset_shortTTlist made above (it is a list of abbreviated topTable df's including BOTH UP and DOWN) then put the results into IDB for pway  ORA analysis. 
+
+#NOTE: I may still get some pathways that show up as being associated with the probes I put in, but you don't get pvalues unless you continue on and do an ORA
+
+
+#first just choose the columns I want, ENTREZ_GENE_ID, logFC, adj.P.Val
+
+
+forIDB_subset_shortTTlist<-lapply(subset_shortTTlist, FUN = function(x) x[,c("ENTREZ_GENE_ID","logFC","adj.P.Val")])
+
+
+
+#mapply looping over both list itself and the list names to name the txt files
+
+mapply(write.table,forIDB_subset_shortTTlist,file=paste("subset_vaginal_explant_microarray/IDBinput/",names(subset_shortTTlist),"UPandDOWN.txt", sep=""),sep="\t",row.names=FALSE)
+
+##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included. This is the IDB protocol that I used for the complete vag explant data set on 8Jan16
+
+
+
+
+#NO HITS for subset_V186.3 pathway ORA
+
+#NO HITS for subset_V186.8 pathway ORA
+
+#Many hits for subset_V186.24 pathway ORA
+
+#I downloaded the file as .txt, then opened it in excel, appended the name with "_noDirection_Column" since there the pathways aren't differentiated for up and down, and saved it 
+#here:
+#J:\MacLabUsers\HLADIK SHARED\Projects\Herpes study\Herpes-Project-1\subset_vaginal_explant_microarray\INNATE DB RESULTS\oraSpreadsheets\
+```
+
+
+```{r logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+
+library(pheatmap)
+
 
 
