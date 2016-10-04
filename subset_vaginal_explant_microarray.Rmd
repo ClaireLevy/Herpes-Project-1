@@ -18,6 +18,7 @@ require(limma)
 library(pander)
 library(stringr)
 library(ggplot2)
+library(reshape2)
 ```
 
 ```{r read in raw MA data final report,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide', cache = TRUE}
@@ -307,9 +308,7 @@ write.table(meltSummary, file="subset_vaginal_explant_microarray/meltSummaryData
 
 V186 vs Mock at 3hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-
-
+```{r tt1 heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 
 tt1<-topTable(fit2,coef="V186.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -323,11 +322,14 @@ esetSel1<-expressedProbes.lumi[selected1,targets$Time=="3"]
 #To have informative names along the bottom of the heatmap,replace #the true Sample Names(numbers)with their corresponding treatment.
 #i.e. look at the rows in expressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
 
-colnames(exprs(esetSel1))<-paste(pData(expressedProbes.lumi)[colnames(esetSel1),"Treatment"],
+
 
 #make labels for the bottom that have the tissue ID and treatment
 
-pData(expressedProbes.lumi)[colnames(esetSel1),"TissueID"],sep= " ")
+colnames(exprs(esetSel1))<-paste(
+  pData(expressedProbes.lumi)[colnames(esetSel1),"Treatment"],
+  pData(expressedProbes.lumi)[colnames(esetSel1),"TissueID"],
+  sep= " ")
 
 heatmap(exprs(esetSel1))
 
@@ -335,7 +337,7 @@ heatmap(exprs(esetSel1))
 
 V186 vs Mock at 8hr only has two probes so I can't make a heat map.
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r tt2 heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 #repeat for coef 2
 tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -344,7 +346,7 @@ tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.va
 
 V186 vs mock at 24hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r tt3 heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 
 #and coef3
 tt3<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
@@ -586,9 +588,87 @@ mapply(write.table,forIDB_subset_shortTTlist,file=paste("subset_vaginal_explant_
 ```
 
 
-```{r logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+```{r prepare exprs for logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 
-library(pheatmap)
+#I'm going to make a heat map that shows the logFC of virus over mock, instead of just the expression values like in the heatmaps I made above.
+
+
+#I'm starting with the same matrices that I used to make the exprs heatmaps ( which have columns for Virus and mock for each donor), but I'm going to:
+#MELT
+#Extract Mock
+#Merge back in the mock by = the donor number
+#Make a new column that is the log2 of virus - log2 mock for each donor.
+#heat map the mock subtracted result.
+
+#This was only interesting for V186.24, so I'll start with that one.
+
+#take the exprs of esetSel3, which is the exprs of the PROBES designated in topTable for V186.24
+
+log2ExprsV186.24<-as.data.frame(exprs(esetSel3))
+
+#Make the probes a col intead of a rownames and get rid of the rownames
+
+log2ExprsV186.24<- log2ExprsV186.24 %>%
+  mutate(ProbeID = rownames(log2ExprsV186.24))
+
+
+rownames(log2ExprsV186.24)<- NULL
+
+meltLog2ExprsV186.24 <- melt(log2ExprsV186.24, id.vars = "ProbeID", variable.name = "Treatment_Donor", value.name = "log2Exprs")
+
+#Split the treatment_donor col into two cols
+
+TreatmentAndDonor<-str_split(meltLog2ExprsV186.24$Treatment_Donor, pattern = " ", n = 2, simplify = TRUE)
+
+colnames(TreatmentAndDonor)<-c("Treatment", "Donor")
+
+#cbind it to the df it came from
+meltLog2ExprsV186.24 <- cbind(meltLog2ExprsV186.24, TreatmentAndDonor)
+```
+
+
+```{r extract Mock for logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+
+mock <- meltLog2ExprsV186.24 %>%
+  filter(Treatment == "Mock")
+
+#remove Mock from the rest of the data
+
+noMock <- meltLog2ExprsV186.24 %>%
+  filter(Treatment != "Mock")
+
+```
+
+
+```{r merge and subtract mock for logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+
+
+mergeMock<- merge(noMock, mock, by = c("Donor", "ProbeID"))
+
+#fix up the colnames 
+
+names(mergeMock)[3:8]<- c("Treatment_Donor_Virus","log2Exprs_Virus","Treatment_Virus","Treatment_Donor_Mock","log2Exprs_Mock","Treatment_Mock")
+
+
+#Add a new column for the subtraction
+
+mergeMock<- mergeMock %>%
+  mutate(mockSubtracted = log2Exprs_Virus-log2Exprs_Mock)
+
+
+save(mergeMock, file = "subset_mergeMock.Rdata")
+```
 
 
 
+
+```{r plot logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+
+
+#this DEFINITELY wont work if you have all the other data in memory at the same time!!. Clear the environment first then load mergeMock
+
+load(mergeMock.Rdata)
+
+ggplot(mergeMock[1:100,], aes(x = mockSubtracted, y = ProbeID))+
+  geom_raster(aes(fill = mockSubtracted))+
+  scale_fill_gradient(low = "green", high = "red")

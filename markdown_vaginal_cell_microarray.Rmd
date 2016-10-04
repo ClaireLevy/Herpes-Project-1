@@ -16,7 +16,7 @@ require(limma)
 #READ IN RAW MICROARRAY DATA FINAL REPORT #######
 #data sent from LMF
 
-RAW<-"J:\\MacLabUsers\\HLADIK SHARED\\Projects\\Herpes study\\Herpes-Project-1\\vaginal_cell_microarray\\Finalreport_HSV2_HVE MA.txt"
+RAW<-"vaginal_cell_microarray_Illumina\\Finalreport_HSV2_HVE MA.txt"
 
 RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = '.',
                 parseColumnName = FALSE, checkDupId = FALSE,
@@ -36,7 +36,7 @@ RAW.lumi<-RAW.lumi[,-26]
 ```
 
 SOME PLOTS OF NON NORMALIZED DATA:
-LMF left sample 3E out of the analysis because it was determined that there was some kind of pipetting error. FH told me that when he looked at the analyzed data, 3E looked very similar to the SD90 data but very different from the other 2 V186.24 replicates (samples 6D and 3D) so he didn't feel comfortable leaving it in the analysis. I am also leaving it out here.
+LMF left sample 3E out of the analysis because it was determined that there was some kind of pipetting error. FH told me that when he looked at the analyzed data, 3E (donor 4, 24 hr, 186) looked very similar to the SD90 data but very different from the other 2 V186.24 replicates (samples 6D and 3D) so he didn't feel comfortable leaving it in the analysis. I am also leaving it out here.
 
  Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs.
  
@@ -57,7 +57,7 @@ boxplot(RAW.lumi)
 
 #adding in more complete pData that matches my formatting for the #explant data. 
 
-pData <- read.table("vaginalCellMicroarrayPhenoData.txt",
+pData <- read.table("phenoDataInput/vaginalCellMicroarrayPhenoData.txt",
                        sep="\t",row.names=1, header=TRUE)
 
 pData<- pData[-26,] #remove sample 3E from the pData so it will work nicely with the lumiBatch where I did the same
@@ -83,7 +83,7 @@ complete.RAW.lumi <- new("LumiBatch", exprs = exprs(RAW.lumi),phenoData = adf,
                   detection = detection(RAW.lumi),
                   featureData=featureData(RAW.lumi))
 
-save(complete.RAW.lumi,file = "CELLScomplete.RAW.lumi.Rdata")
+save(complete.RAW.lumi,file = "RdataOutput/CELLScomplete.RAW.lumi.Rdata")
 
 
 ###################BACKGROUND CORRECTION ####################
@@ -105,7 +105,7 @@ NTB.complete.RAW.lumi<-lumiN(TB.complete.RAW.lumi,method="rsn")
 
 QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
 
-save(QNTB.complete.RAW.lumi, file = "CELLSQNTB.complete.RAW.lumi.Rdata")
+save(QNTB.complete.RAW.lumi, file = "RdataOutput/CELLSQNTB.complete.RAW.lumi.Rdata")
 ```
 
 PLOTS OF NORMALIZED DATA: all data, then just 6D and 3D
@@ -161,7 +161,7 @@ How many removed?
 
 dims(QNTB.complete.RAW.lumi)-dims(CELLSexpressedProbes.lumi)#20192
 
-save(CELLSexpressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
+save(RdataOutput/CELLSexpressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
 ```
 
 
@@ -172,12 +172,12 @@ save(CELLSexpressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
 ############### TARGETS AND DESIGN MATRIX ###################
 # see section 9.4.1 and 9.4.2 in the limma users guide
 
-targets<-pData(CELLSexpressedProbes.lumi)%>%
+CELLStargets<-pData(CELLSexpressedProbes.lumi)%>%
   select(TissueID, Treatment,Time)
-TissueID<- factor(targets$TissueID)
-Treat <-factor(paste(targets$Treatment,targets$Time, sep="."))
+CELLSTissueID<- factor(CELLStargets$TissueID)
+CELLSTreat <-factor(paste(CELLStargets$Treatment,CELLStargets$Time, sep="."))
 
-design<-model.matrix (~0+Treat+TissueID)
+CELLSdesign<-model.matrix (~0+CELLSTreat+CELLSTissueID)
 save(design, file="CELLSdesign.Rdata")
 
 
@@ -189,8 +189,8 @@ save(design, file="CELLSdesign.Rdata")
 
 ####################### FIT MODEL TO PROBES ###################
 
-fit <- lmFit(CELLSexpressedProbes.lumi,design=design)
-save(fit, file="CELLSfit.Rdata")
+fit <- lmFit(CELLSexpressedProbes.lumi,design=CELLSdesign)
+save(fit, file="RdataOutput/CELLSfit.Rdata")
 
 #Now we can make any comparisons
 #between the experimental conditions
@@ -202,13 +202,13 @@ save(fit, file="CELLSfit.Rdata")
 # one column.
 
 bothcm<-makeContrasts(
-  V186.3vsMock.3 = TreatV186.3-TreatMock.3,
-  V186.8vsMock.8 = TreatV186.3-TreatMock.8,
-  V186.24vsMock.24 = TreatV186.24-TreatMock.24,
-  SD90.3vsMock.3 = TreatSD90.3-TreatMock.3,
-  SD90.8vsMock.8 = TreatSD90.8-TreatMock.8,
-  SD90.24vsMock.24 = TreatSD90.24-TreatMock.24,
-  levels=design
+  V186.3vsMock.3 = CELLSTreatV186.3-CELLSTreatMock.3,
+  V186.8vsMock.8 = CELLSTreatV186.3-CELLSTreatMock.8,
+  V186.24vsMock.24 = CELLSTreatV186.24-CELLSTreatMock.24,
+  SD90.3vsMock.3 = CELLSTreatSD90.3-CELLSTreatMock.3,
+  SD90.8vsMock.8 = CELLSTreatSD90.8-CELLSTreatMock.8,
+  SD90.24vsMock.24 = CELLSTreatSD90.24-CELLSTreatMock.24,
+  levels=CELLSdesign
 )
 
 
@@ -220,7 +220,7 @@ fit2<-contrasts.fit(bothcm, fit=fit)
 #compute diff exprsn
 fit2 <-eBayes(fit2)
 
-save(fit2, file= "CELLSfit2eBayes.Rdata")
+save(fit2, file= "RdataOutput/CELLSfit2eBayes.Rdata")
 ```
 
 How many probes are up and down regulated for each contrast?
@@ -231,19 +231,19 @@ How many probes are up and down regulated for each contrast?
 results<-decideTests(fit2,method="separate", adjust.method="BH",
                       p.value=0.05, lfc=0.5)
 
-save(results, file= "CELLSdecideTestsResults.Rdata")
+save(results, file= "RdataOutput/CELLSdecideTestsResults.Rdata")
 
 #turn the results matrix into a data frame and make the
 #probeID a real column and remove the rownames
 
 resultsDF<-as.data.frame(results)
-resultsDF$ProbeID<-rownames(resultsDF)
+resultsDF$PROBE_ID<-rownames(resultsDF)
 rownames(resultsDF)<-NULL
 
 #melt the df for easy summarizing
 library(reshape2)
 
-resultsDFmelt<-melt(resultsDF, id.vars="ProbeID")
+resultsDFmelt<-melt(resultsDF, id.vars="PROBE_ID")
 save(resultsDFmelt,file = "resultsDFmelt.Rdata")
 #number of up and down regulated probes based on 
 #p.val at least 0.05 and lfc at least 0.5
@@ -252,7 +252,7 @@ summary<-resultsDFmelt %>%
   group_by(variable)%>%
  summarize(down=sum(value=="-1"),up=sum(value=="1"))
 summary
-save(summary, file = "CELLSsummary.Rdata")
+save(summary, file = "RdataOutput/CELLSsummary.Rdata")
 
 meltSummary <- melt(summary)
 
@@ -270,8 +270,9 @@ meltSummary$Direction <- factor( meltSummary$Direction, levels = c("up","down"))
 meltSummary$Time <- factor( meltSummary$Time, levels = c("3","8","24"))
 
 library(ggplot2)
+
 ggplot(meltSummary,aes(x=Time, y = Probes))+
-  geom_point(aes(color = Virus))+
+  geom_point(aes(color = Virus),size = 3)+
   facet_wrap(~Direction)+
   geom_line(aes(group=Virus, color=Virus))+
   theme(aspect.ratio = 1)+
@@ -335,9 +336,16 @@ heatmap(exprs(CELLSesetSel3))
 
 ```{r,echo=FALSE,message=FALSE, warning=FALSE}
 
+
+##### PREPARING DATA TO READ INTO IDB #################
+
 CELLSttList<-list(CELLStt1, CELLStt2,CELLStt3)
+
+save(CELLSttList, file = "RdataOutput/CELLSttList.Rdata")
+
 ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
-save(ProbeIDandSymbol, file="CELLSProbeIDandSymbol.Rda")
+
+save(ProbeIDandSymbol, file="RdataOutput/CELLSProbeIDandSymbol.Rda")
 
 #function to get short versions of the tt's and include
 #probeID, entrez and symbols
@@ -374,24 +382,28 @@ getDOWN<-function(df){
 
 #get upreg
 CELLSV186UP<-lapply(CELLSshortTTlist,FUN=getUP)
+
+save(CELLSV186UP, file="CELLSV186UP.Rdata")
 #get downreg      
 CELLSV186DOWN<-lapply(CELLSshortTTlist,FUN=getDOWN)
+save(CELLSV186DOWN, file = "CELLSV186DOWN.Rdata")
 
 
 #mapply looping over both list itself and the list names to name the txt files
 
-mapply(write.table,CELLSV186UP,file=paste(names(CELLSV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
+mapply(write.table,CELLSV186UP,file=paste("IDBinput/",names(CELLSV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
 
-mapply(write.table,CELLSV186DOWN,file=paste(names(CELLSV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
-
-
-
-###reading in the InnateDB results of the GO analysis. Here I will filter for just the probes that were annotated with the GO CC term "extracellular space" OR "extracellular region"
+mapply(write.table,CELLSV186DOWN,file=paste("IDBinput/",names(CELLSV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
 
 
-geneFolder <- "J:/MacLabUsers/HLADIK SHARED/Projects/Herpes study/Herpes-Project-1/INNATE DB RESULTS/geneSpreadsheets/CELLS"
 
-geneFiles <- list.files(geneFolder, pattern="all")
+###reading in the InnateDB results of the GO analysis. 
+library(dplyr)
+library(reshape2)
+library(stringr)
+geneFolder <- "INNATE DB RESULTS/geneSpreadsheets/CELLS"
+
+geneFiles <- list.files(geneFolder)
 
 geneFilesPath<-paste(geneFolder, "/",geneFiles, sep="")
 
@@ -407,7 +419,18 @@ names(geneIDBdata)<-str_replace(geneFiles,pattern=".txt",replacement="")
 
 shortgeneIDBdata<-lapply(geneIDBdata, FUN = select, entrez, name,fullname,goTerms)
 
-shortgeneIDBdata<-lapply(shortgeneIDBdata, FUN=filter, goTerms = str_detect(goTerms, pattern = "GO:0005615")==TRUE |str_detect(goTerms, pattern = "GO:0005576")==TRUE)
+
+#bind all the dfs together
+
+
+shortgeneIDBdata<- bind_rows(shortgeneIDBdata, .id = "TimepointandDirection")
+
+
+#write out
+
+write.csv(shortgeneIDBdata, file = "INNATE DB RESULTS/Excel for FH from IDB/CELLS/CELLSallGenesV186_3_8_24_upAndDown.csv")
+
+
 
 #annoyingly, there are several rows in the entrez column that have multiple numbers separated by a comma. All correspond to the same gene name (symbol). I want to separate out those rows, melt them so that there is one entrez id per line and then rbind with the rest of the data.
 
@@ -457,4 +480,7 @@ CELLSExtracellularGenesV186<-lapply(shortgeneIDBdata, FUN=noCommas)
 
 save(CELLSExtracellularGenesV186, file="CELLSExtracellularGenesV186.Rdata")
 
+```
 
+
+SessionInfo()
