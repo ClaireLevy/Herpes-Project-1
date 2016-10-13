@@ -1,4 +1,3 @@
-
 *.Rhistory
 *.RData
 *.Rdata
@@ -9,3 +8,14 @@ vaginal_explant_Illumina/*
 *.db
 *.xlsx
 *.Rda
+.Rproj.user
+INNATE DB RESULTS/*
+IngenuityInput/*
+IngenuityResults/*
+CAMERA_gene_set_testing_cache
+CAMERA_gene_set_testing_output
+vaginal_explant_microarray_Illumina
+data from LMF analysis of epi cells
+subset_vaginal_explant_microarray/SUBSET INNATE DB RESULTS/*
+Herpes-Project-1_README.txt
+subset_vaginal_explant_microarray/subset_ProbeIDandSymbol.Rda

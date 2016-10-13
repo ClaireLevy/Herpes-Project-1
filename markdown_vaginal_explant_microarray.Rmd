@@ -6,10 +6,9 @@ output:
 
 "Vaginal explant herpes infection experiment"
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
+```{r READ IN RAW MICROARRAY DATA FINAL REPORT,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
 
 
-###READ IN RAW MICROARRAY DATA FINAL REPORT #######
 #data from shared resources
 
 library(plyr)
@@ -316,7 +315,7 @@ Then we choose the comparisons we want to analyze. I compared each treatment + t
   SD90.24vsMock.24
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r fit model to probes,echo=FALSE,message=FALSE, warning=FALSE}
 
 ####################### FIT MODEL TO PROBES
 
@@ -356,7 +355,7 @@ save(fit2, file= "RdataOutput/fit2eBayes.Rdata")
 After fitting the contrasts to the model using our design matrix, we can see how many probes are up and down-regulated for each contrast, based on a p-value cut-off of 0.05 and a log-fold-change cut-off of 0.5.
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r get results table with decideTests,echo=FALSE,message=FALSE, warning=FALSE}
 
 #method=separate is same as doing topTable for all coefs separately
 
@@ -397,8 +396,7 @@ save(summary, file = "RdataOutput/summary.Rdata")
 V186 vs mock at 3hr
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
-############### TOP TABLE AND HEAT MAPS #############
+```{r tt and heat map V186 vs mock at 3hr,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 
 #adj p values <0.05 and lfc >=0.5
 #get the toptable for this contrast
@@ -424,7 +422,7 @@ heatmap(exprs(esetSel1))
 
 V186 vs mock at 8hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
+```{r V186 vs mock at 8hr,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 #repeat for coefs 2
 tt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -441,7 +439,8 @@ heatmap(exprs(esetSel2))
 
 V186 vs mock at 24hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
+```{r V186 vs mock at 24hr,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
+
 
 #and coef3
 tt3<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
@@ -460,7 +459,7 @@ heatmap(exprs(esetSel3))
 
 SD90vsMock at 3hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
+```{r SD90vsMock at 3hr,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 #and coef4
 tt4<-topTable(fit2,coef="SD90.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -477,7 +476,7 @@ heatmap(exprs(esetSel4))
 
 Heat map of V186 AND SD90 at 24hr for probes that were sig for V186.24
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
+```{r Heat map of V186 AND SD90 at 24hr,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
 
 
 esetSel<-expressedProbes.lumi[selected3, targets$Time=="24"]
@@ -492,22 +491,25 @@ heatmap(exprs(esetSel))
 Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V186.24 vs Mock condition for up and down regulated probes.
 
  
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
-
-### PREPARING DATA FOR INNATE DB
+```{r Preparing data for IDB and ingenuity,echo=FALSE,message=FALSE, warning=FALSE}
 
 
 #extracting ProbeIDs, symbols and Entrez from fData
+
+load("RdataOutput/RAW.lumi.Rdata")
+
 ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
 
 
 #innate db pathway analysis requires probes ids, log fold changes and expression pvalues. 
 
-#I will extract those for all time points
-#the toptablea that I made above 
+#I will extract those for 24hrs from the  toptables that I made above 
 
 
-########## V186.24
+## V186.24
+
+
+load("RdataOutput/tt3.Rdata")
 
 V186.24ForIDB<-tt3%>%
   select(logFC,adj.P.Val)
@@ -515,18 +517,38 @@ V186.24ForIDB<-tt3%>%
 V186.24ForIDB$ProbeID<-rownames(V186.24ForIDB)
 
 rownames(V186.24ForIDB$ProbeID)<-NULL
+```
 
+
+
+
+```{r Preparing data for Ingenuity,echo=FALSE,message=FALSE, warning=FALSE}
+
+#this contains top table info and corresponding probes for both up and down.
 V186.24ForIDB<-merge(ProbeIDandSymbol,V186.24ForIDB, by = "ProbeID")
 
+
+
+#write out for Ingenuity (they want excel so I'm doing a .csv)
+write.csv(V186.24ForIDB, file = "IngenuityInput/V186.24upAndDown.csv", row.names = FALSE )
+
+```
+
+
+```{r Preparing data for IDB ,echo=FALSE,message=FALSE, warning=FALSE}
+
+
+#get just the up reg probes
 V186.24ForIDBUP<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
-  filter(logFC>0)
+  filter(logFC>0) #filter for the up ones only
 
+#write out for IDB
 write.table(V186.24ForIDBUP, file="IDBinput/V186.24ForIDBUP.txt",
             sep="\t", row.names = FALSE)
 
 
-
+#repeat for down reg
 V186.24ForIDBDOWN<-V186.24ForIDB%>%
   select(ENTREZ_GENE_ID,logFC,adj.P.Val)%>%
   filter(logFC<0)
@@ -534,13 +556,16 @@ V186.24ForIDBDOWN<-V186.24ForIDB%>%
 write.table(V186.24ForIDBDOWN, file="IDBinput/V186.24ForIDBDOWN.txt",
             sep="\t", row.names = FALSE)
 
-##I put the above files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included
+##I put the up and down reg files into innateDB with the "subset of genes", "hypergeometric" and "Benjamini-Hochberg" options for the pathway ORA. I don't think it matters if pvals are included
 
 
 ##### ACCESSED IDB FOR V186.24UP and DOWN ON 8Jan2016 ######
+```
 
 
-######### READING IN GENE DATA FROM INNATE DB
+
+```{r reading in gene data from IDB,echo=FALSE,message=FALSE, warning=FALSE}
+
 library(stringr)
 library(dplyr)
 library(reshape2)

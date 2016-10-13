@@ -1,1 +1,4 @@
+*.Rda
+*.Rdata
+*.xlsx
 subset_ProbeIDandSymbol.Rda
