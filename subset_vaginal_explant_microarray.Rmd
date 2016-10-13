@@ -135,7 +135,7 @@ save(QNTB.complete.RAW.lumi, file = "subset_vaginal_explant_microarray/QNTB.comp
 
 
 
-```{r filtering echo=FALSE,message=FALSE, warning=FALSE}
+```{r filtering, echo=FALSE,message=FALSE, warning=FALSE}
 #filtering
             
 detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=7
@@ -712,16 +712,3 @@ mergeMock<- mergeMock %>%
 save(mergeMock, file = "subset_mergeMock.Rdata")
 ```
 
-
-
-
-```{r plot logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
-
-
-#this DEFINITELY wont work if you have all the other data in memory at the same time!!. Clear the environment first then load mergeMock
-
-load(mergeMock.Rdata)
-
-ggplot(mergeMock[1:100,], aes(x = mockSubtracted, y = ProbeID))+
-  geom_raster(aes(fill = mockSubtracted))+
-  scale_fill_gradient(low = "green", high = "red")

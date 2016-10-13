@@ -1,13 +1,6 @@
 base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
 plyr
 dplyr
-parallel
 BiocGenerics
 Biobase
 lumi
@@ -15,3 +8,4 @@ limma
 pander
 stringr
 ggplot2
+reshape2
