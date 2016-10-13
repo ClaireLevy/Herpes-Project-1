@@ -239,7 +239,7 @@ save(fit2, file = "subset_vaginal_explant_microarray/fit2eBayes.Rdata")
 
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r get results table and melt,echo=FALSE,message=FALSE, warning=FALSE}
 
 #method=separate is same as doing topTable for all coefs separately
 
@@ -308,7 +308,7 @@ write.table(meltSummary, file="subset_vaginal_explant_microarray/meltSummaryData
 
 V186 vs Mock at 3hr
 
-```{r tt1 heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+```{r tt1 exprs heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 
 tt1<-topTable(fit2,coef="V186.3vsMock.3", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
@@ -334,6 +334,7 @@ colnames(exprs(esetSel1))<-paste(
 heatmap(exprs(esetSel1))
 
 ```
+
 
 V186 vs Mock at 8hr only has two probes so I can't make a heat map.
 
@@ -363,6 +364,58 @@ colnames(exprs(esetSel3))<-paste(pData(expressedProbes.lumi)[colnames(esetSel3),
 heatmap(exprs(esetSel3))
 ```
 
+
+```{r tt3 logFC heatmap setup,echo=FALSE,message=FALSE, warning=FALSE}
+
+########## TRYING TO USE GGPLOT FOR HEATMAP BUT TOO MANY ROWS!!!
+
+# #get the exprs for the Mock and experimental conditions for timepoint 3
+# V186.24vsMock.24Exprs<-exprs(esetSel3)
+# 
+# #make it a df and make the rownames a column
+# 
+# V186.24vsMock.24Exprs<-as.data.frame(V186.24vsMock.24Exprs)
+# V186.24vsMock.24Exprs$ProbeID<-rownames(V186.24vsMock.24Exprs)
+# rownames(V186.24vsMock.24Exprs)<-NULL
+# 
+# #this needs to be in long format for plotting
+# 
+# V186.24vsMock.24Exprs<-melt(V186.24vsMock.24Exprs,id.vars = "ProbeID", variable.name = "Sample",value.name = "log2Exprs")
+# 
+# #split up the sample col into donor and treatment
+# V186.24vsMock.24Exprs <- V186.24vsMock.24Exprs %>%
+#   mutate(Treatment = substr(Sample, 1,4))%>%
+#   mutate(Donor = substr(Sample, 6,8))
+# 
+# #filter out mock
+# 
+# mockV186.24<-V186.24vsMock.24Exprs %>%
+#   filter(Treatment == "Mock")
+# 
+# 
+# V186.24noMock<-V186.24vsMock.24Exprs %>%
+#   filter(Treatment != "Mock")
+# 
+# 
+# mergeV186.24mock<-merge(V186.24noMock, mockV186.24, by = c("ProbeID","Donor"))
+# #fix colnames
+# 
+# mergeV186.24mock<-mergeV186.24mock%>%
+#   select(-c(3,5,6,8))
+# 
+# names(mergeV186.24mock)[3:4]<- c("log2Exprs.V186","log2Exprs.Mock")
+# 
+# mergeV186.24mock<-mergeV186.24mock %>%
+#   mutate(logFC = log2Exprs.V186-log2Exprs.Mock)
+# 
+# 
+# ```
+# 
+# ```{r tt3 logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+# ggplot(mergeV186.24mock[1:1000,], aes(x = Donor, y = ProbeID))+
+#   geom_tile(aes(fill = logFC), color = "gray")+
+#   scale_fill_gradient2(low = "green", mid = "black", high = "red", midpoint = 0, name = "log2 Fold Change")
+```
 
 
 
