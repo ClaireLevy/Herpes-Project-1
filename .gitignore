@@ -1,4 +1,4 @@
-*.Rproj.user
+
 *.Rhistory
 *.RData
 *.Rdata
@@ -7,6 +7,5 @@
 *.lnk
 vaginal_explant_Illumina/*
 *.db
-
-
-.Rproj.user
+*.xlsx
+*.Rda
