@@ -3,56 +3,56 @@ This is a subset of the vaginal explant microarray data. We subset for just the 
 I am subsetting for just TissueIDs 317 318 323 324 at all time points for V186
 
     ## Perform vst transformation ...
-    ## 2016-10-13 16:39:51 , processing array  1 
-    ## 2016-10-13 16:39:51 , processing array  2 
-    ## 2016-10-13 16:39:51 , processing array  3 
-    ## 2016-10-13 16:39:51 , processing array  4 
-    ## 2016-10-13 16:39:51 , processing array  5 
-    ## 2016-10-13 16:39:51 , processing array  6 
-    ## 2016-10-13 16:39:51 , processing array  7 
-    ## 2016-10-13 16:39:51 , processing array  8 
-    ## 2016-10-13 16:39:51 , processing array  9 
-    ## 2016-10-13 16:39:51 , processing array  10 
-    ## 2016-10-13 16:39:52 , processing array  11 
-    ## 2016-10-13 16:39:52 , processing array  12 
-    ## 2016-10-13 16:39:52 , processing array  13 
-    ## 2016-10-13 16:39:52 , processing array  14 
-    ## 2016-10-13 16:39:52 , processing array  15 
-    ## 2016-10-13 16:39:52 , processing array  16 
-    ## 2016-10-13 16:39:52 , processing array  17 
-    ## 2016-10-13 16:39:52 , processing array  18 
-    ## 2016-10-13 16:39:52 , processing array  19 
-    ## 2016-10-13 16:39:52 , processing array  20 
-    ## 2016-10-13 16:39:52 , processing array  21 
-    ## 2016-10-13 16:39:52 , processing array  22 
-    ## 2016-10-13 16:39:52 , processing array  23 
-    ## 2016-10-13 16:39:52 , processing array  24
+    ## 2016-10-14 12:37:15 , processing array  1 
+    ## 2016-10-14 12:37:15 , processing array  2 
+    ## 2016-10-14 12:37:15 , processing array  3 
+    ## 2016-10-14 12:37:15 , processing array  4 
+    ## 2016-10-14 12:37:15 , processing array  5 
+    ## 2016-10-14 12:37:15 , processing array  6 
+    ## 2016-10-14 12:37:15 , processing array  7 
+    ## 2016-10-14 12:37:15 , processing array  8 
+    ## 2016-10-14 12:37:15 , processing array  9 
+    ## 2016-10-14 12:37:15 , processing array  10 
+    ## 2016-10-14 12:37:15 , processing array  11 
+    ## 2016-10-14 12:37:15 , processing array  12 
+    ## 2016-10-14 12:37:15 , processing array  13 
+    ## 2016-10-14 12:37:15 , processing array  14 
+    ## 2016-10-14 12:37:15 , processing array  15 
+    ## 2016-10-14 12:37:15 , processing array  16 
+    ## 2016-10-14 12:37:15 , processing array  17 
+    ## 2016-10-14 12:37:15 , processing array  18 
+    ## 2016-10-14 12:37:15 , processing array  19 
+    ## 2016-10-14 12:37:15 , processing array  20 
+    ## 2016-10-14 12:37:16 , processing array  21 
+    ## 2016-10-14 12:37:16 , processing array  22 
+    ## 2016-10-14 12:37:16 , processing array  23 
+    ## 2016-10-14 12:37:16 , processing array  24
 
     ## Perform rsn normalization ...
-    ## 2016-10-13 16:39:53 , processing array  1 
-    ## 2016-10-13 16:39:53 , processing array  2 
-    ## 2016-10-13 16:39:53 , processing array  3 
-    ## 2016-10-13 16:39:54 , processing array  4 
-    ## 2016-10-13 16:39:54 , processing array  5 
-    ## 2016-10-13 16:39:54 , processing array  6 
-    ## 2016-10-13 16:39:54 , processing array  7 
-    ## 2016-10-13 16:39:54 , processing array  8 
-    ## 2016-10-13 16:39:54 , processing array  9 
-    ## 2016-10-13 16:39:54 , processing array  10 
-    ## 2016-10-13 16:39:54 , processing array  11 
-    ## 2016-10-13 16:39:54 , processing array  12 
-    ## 2016-10-13 16:39:54 , processing array  13 
-    ## 2016-10-13 16:39:54 , processing array  14 
-    ## 2016-10-13 16:39:54 , processing array  15 
-    ## 2016-10-13 16:39:54 , processing array  16 
-    ## 2016-10-13 16:39:54 , processing array  17 
-    ## 2016-10-13 16:39:54 , processing array  18 
-    ## 2016-10-13 16:39:55 , processing array  19 
-    ## 2016-10-13 16:39:55 , processing array  20 
-    ## 2016-10-13 16:39:55 , processing array  21 
-    ## 2016-10-13 16:39:55 , processing array  22 
-    ## 2016-10-13 16:39:55 , processing array  23 
-    ## 2016-10-13 16:39:55 , processing array  24
+    ## 2016-10-14 12:37:17 , processing array  1 
+    ## 2016-10-14 12:37:17 , processing array  2 
+    ## 2016-10-14 12:37:17 , processing array  3 
+    ## 2016-10-14 12:37:17 , processing array  4 
+    ## 2016-10-14 12:37:17 , processing array  5 
+    ## 2016-10-14 12:37:17 , processing array  6 
+    ## 2016-10-14 12:37:17 , processing array  7 
+    ## 2016-10-14 12:37:18 , processing array  8 
+    ## 2016-10-14 12:37:18 , processing array  9 
+    ## 2016-10-14 12:37:18 , processing array  10 
+    ## 2016-10-14 12:37:18 , processing array  11 
+    ## 2016-10-14 12:37:18 , processing array  12 
+    ## 2016-10-14 12:37:18 , processing array  13 
+    ## 2016-10-14 12:37:18 , processing array  14 
+    ## 2016-10-14 12:37:18 , processing array  15 
+    ## 2016-10-14 12:37:18 , processing array  16 
+    ## 2016-10-14 12:37:18 , processing array  17 
+    ## 2016-10-14 12:37:18 , processing array  18 
+    ## 2016-10-14 12:37:18 , processing array  19 
+    ## 2016-10-14 12:37:18 , processing array  20 
+    ## 2016-10-14 12:37:18 , processing array  21 
+    ## 2016-10-14 12:37:19 , processing array  22 
+    ## 2016-10-14 12:37:19 , processing array  23 
+    ## 2016-10-14 12:37:19 , processing array  24
 
     ## Perform Quality Control assessment of the LumiBatch object ...
 
@@ -113,6 +113,10 @@ V186 vs Mock at 8hr only has two probes so I can't make a heat map.
 V186 vs mock at 24hr
 
 ![](subset_vaginal_explant_microarray_files/figure-markdown_github/tt3%20heatmap-1.png)
+
+Heatmap of logFC of virus vs mock for 186 24hrs
+
+![](subset_vaginal_explant_microarray_files/figure-markdown_github/tt3%20logFC%20Pheatmap-1.png)
 
     ## $subset_V186.3
     ## NULL

@@ -367,55 +367,93 @@ heatmap(exprs(esetSel3))
 
 ```{r tt3 logFC heatmap setup,echo=FALSE,message=FALSE, warning=FALSE}
 
-########## TRYING TO USE GGPLOT FOR HEATMAP BUT TOO MANY ROWS!!!
+#load targets.Rda, fit2eBayes.Rdata, expressedProbes.lumi.Rdata, esetSel3.Rdata
 
-# #get the exprs for the Mock and experimental conditions for timepoint 3
-# V186.24vsMock.24Exprs<-exprs(esetSel3)
-# 
-# #make it a df and make the rownames a column
-# 
-# V186.24vsMock.24Exprs<-as.data.frame(V186.24vsMock.24Exprs)
-# V186.24vsMock.24Exprs$ProbeID<-rownames(V186.24vsMock.24Exprs)
-# rownames(V186.24vsMock.24Exprs)<-NULL
-# 
-# #this needs to be in long format for plotting
-# 
-# V186.24vsMock.24Exprs<-melt(V186.24vsMock.24Exprs,id.vars = "ProbeID", variable.name = "Sample",value.name = "log2Exprs")
-# 
-# #split up the sample col into donor and treatment
-# V186.24vsMock.24Exprs <- V186.24vsMock.24Exprs %>%
-#   mutate(Treatment = substr(Sample, 1,4))%>%
-#   mutate(Donor = substr(Sample, 6,8))
-# 
-# #filter out mock
-# 
-# mockV186.24<-V186.24vsMock.24Exprs %>%
-#   filter(Treatment == "Mock")
-# 
-# 
-# V186.24noMock<-V186.24vsMock.24Exprs %>%
-#   filter(Treatment != "Mock")
-# 
-# 
-# mergeV186.24mock<-merge(V186.24noMock, mockV186.24, by = c("ProbeID","Donor"))
-# #fix colnames
-# 
-# mergeV186.24mock<-mergeV186.24mock%>%
-#   select(-c(3,5,6,8))
-# 
-# names(mergeV186.24mock)[3:4]<- c("log2Exprs.V186","log2Exprs.Mock")
-# 
-# mergeV186.24mock<-mergeV186.24mock %>%
-#   mutate(logFC = log2Exprs.V186-log2Exprs.Mock)
-# 
-# 
-# ```
-# 
-# ```{r tt3 logFC heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+
+#get the exprs for the Mock and experimental conditions for timepoint 3
+V186.24vsMock.24Exprs<-exprs(esetSel3)
+
+#make it a df and make the rownames a column
+
+V186.24vsMock.24Exprs<-as.data.frame(V186.24vsMock.24Exprs)
+V186.24vsMock.24Exprs$ProbeID<-rownames(V186.24vsMock.24Exprs)
+rownames(V186.24vsMock.24Exprs)<-NULL
+
+#this needs to be in long format for plotting
+
+V186.24vsMock.24Exprs<-melt(V186.24vsMock.24Exprs,id.vars = "ProbeID", variable.name = "Sample",value.name = "log2Exprs")
+
+#split up the sample col into donor and treatment
+V186.24vsMock.24Exprs <- V186.24vsMock.24Exprs %>%
+  mutate(Treatment = substr(Sample, 1,4))%>%
+  mutate(Donor = substr(Sample, 6,8))
+
+#filter out mock
+
+mockV186.24<-V186.24vsMock.24Exprs %>%
+  filter(Treatment == "Mock")
+
+
+V186.24noMock<-V186.24vsMock.24Exprs %>%
+  filter(Treatment != "Mock")
+
+
+mergeV186.24mock<-merge(V186.24noMock, mockV186.24, by = c("ProbeID","Donor"))
+#fix colnames
+
+mergeV186.24mock<-mergeV186.24mock%>%
+  select(-c(3,5,6,8))
+
+names(mergeV186.24mock)[3:4]<- c("log2Exprs.V186","log2Exprs.Mock")
+
+mergeV186.24mock<-mergeV186.24mock %>%
+  mutate(logFC = log2Exprs.V186-log2Exprs.Mock)
+```
+
+
+
+
+```{r tt3 logFC  ggplot heatmap,echo=FALSE,message=FALSE, warning=FALSE}
+ #This doesn't work (yet!!) too many rows
+ 
 # ggplot(mergeV186.24mock[1:1000,], aes(x = Donor, y = ProbeID))+
 #   geom_tile(aes(fill = logFC), color = "gray")+
 #   scale_fill_gradient2(low = "green", mid = "black", high = "red", midpoint = 0, name = "log2 Fold Change")
 ```
+
+
+Heatmap of logFC of virus vs mock for 186 24hrs
+
+```{r tt3 logFC Pheatmap,echo=FALSE,message=FALSE, warning=FALSE}
+
+library(pheatmap)
+library(tidyr)
+
+#for pheatmap I need to have the data back in wide format, with a column for each donor and another column for ProbeID.
+#first get rid of the unneeded columns
+
+
+mergeV186.24mockWide<-mergeV186.24mock %>%
+  select(ProbeID, Donor, logFC)%>%
+  spread(Donor, logFC)
+
+#make the ProbeID column into the row names again
+rownames(mergeV186.24mockWide)<-mergeV186.24mockWide$ProbeID
+#get rid of the ProbeID column
+mergeV186.24mockWide$ProbeID<-NULL
+#make into a matrix
+mergeV186.24mockWide<-as.matrix(mergeV186.24mockWide)
+
+pheatmap(mergeV186.24mockWide)
+
+#different clustering...
+# pheatmap(mergeV186.24mockWide, cluster_cols = FALSE, cluster_rows  =  FALSE)
+# 
+# pheatmap(mergeV186.24mockWide, cluster_cols =  FALSE)
+# 
+# pheatmap(mergeV186.24mockWide, cluster_rows =  FALSE)
+```
+
 
 
 
