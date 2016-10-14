@@ -2,10 +2,7 @@
 title: "subset_vaginal_explant_microarray"
 author: "Claire Levy"
 date: "February 5, 2016"
-output:
-  md_document:
-    variant: markdown_github
-
+output: github_document
 ---
 This is a subset of the vaginal explant microarray data. We subset for just the four donors that grouped together by hierarchical clustering in the heat map of V186.24 (323, 317,324,318)
 

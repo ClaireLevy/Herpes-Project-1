@@ -1,3 +1,4 @@
+
 "Vaginal explant herpes infection experiment"
 
 EXPERIMENT NOTES
@@ -127,6 +128,10 @@ V186 vs mock at 24hr
 
 ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/V186%20vs%20mock%20at%2024hr-1.png)
 
+Heatmap of logFC of virus vs mock for 186 24hrs
+
+![](markdown_vaginal_explant_microarray_files/figure-markdown_github/tt3%20logFC%20Pheatmap-1.png)
+
 SD90vsMock at 3hr
 
 ![](markdown_vaginal_explant_microarray_files/figure-markdown_github/SD90vsMock%20at%203hr-1.png)
@@ -153,53 +158,53 @@ Next I used InnateDB to do GO and Pathway overrepresentation analyses for the V1
     ## [8] base     
     ## 
     ## other attached packages:
-    ##  [1] tidyr_0.6.0         reshape2_1.4.1      ggplot2_2.1.0      
-    ##  [4] stringr_1.1.0       pander_0.6.0        limma_3.22.7       
-    ##  [7] lumi_2.18.0         Biobase_2.26.0      BiocGenerics_0.12.1
-    ## [10] dplyr_0.5.0         plyr_1.8.4         
+    ##  [1] tidyr_0.6.0         pheatmap_1.0.8      reshape2_1.4.1     
+    ##  [4] ggplot2_2.1.0       stringr_1.1.0       pander_0.6.0       
+    ##  [7] limma_3.22.7        lumi_2.18.0         Biobase_2.26.0     
+    ## [10] BiocGenerics_0.12.1 dplyr_0.5.0         plyr_1.8.4         
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] nor1mix_1.2-1           splines_3.3.0          
-    ##  [3] foreach_1.4.3           bumphunter_1.6.0       
-    ##  [5] assertthat_0.1          affy_1.44.0            
-    ##  [7] stats4_3.3.0            doRNG_1.6              
-    ##  [9] Rsamtools_1.18.3        methylumi_2.12.0       
-    ## [11] yaml_2.1.13             minfi_1.12.0           
-    ## [13] backports_1.0.3         RSQLite_1.0.0          
-    ## [15] lattice_0.20-33         quadprog_1.5-5         
-    ## [17] digest_0.6.10           checkmate_1.8.1        
-    ## [19] GenomicRanges_1.18.4    RColorBrewer_1.1-2     
-    ## [21] XVector_0.6.0           colorspace_1.2-6       
-    ## [23] htmltools_0.3.5         preprocessCore_1.28.0  
-    ## [25] Matrix_1.2-6            siggenes_1.40.0        
-    ## [27] XML_3.98-1.4            biomaRt_2.22.0         
-    ## [29] genefilter_1.48.1       zlibbioc_1.12.0        
-    ## [31] xtable_1.8-2            scales_0.4.0           
-    ## [33] brew_1.0-6              affyio_1.34.0          
-    ## [35] BiocParallel_1.0.3      tibble_1.1             
-    ## [37] openssl_0.9.4           annotate_1.44.0        
-    ## [39] nleqslv_3.0.3           beanplot_1.2           
-    ## [41] mgcv_1.8-14             pkgmaker_0.22          
-    ## [43] IRanges_2.0.1           GenomicFeatures_1.18.7 
-    ## [45] lazyeval_0.2.0          survival_2.39-5        
-    ## [47] magrittr_1.5            mclust_5.2             
-    ## [49] evaluate_0.9            fail_1.3               
-    ## [51] nlme_3.1-128            MASS_7.3-45            
-    ## [53] BiocInstaller_1.16.5    tools_3.3.0            
-    ## [55] registry_0.3            BBmisc_1.10            
-    ## [57] formatR_1.4             matrixStats_0.50.2     
-    ## [59] sendmailR_1.2-1         S4Vectors_0.4.0        
-    ## [61] munsell_0.4.3           locfit_1.5-9.1         
-    ## [63] rngtools_1.2.4          AnnotationDbi_1.28.2   
-    ## [65] Biostrings_2.34.1       base64_2.0             
-    ## [67] GenomeInfoDb_1.2.5      grid_3.3.0             
-    ## [69] RCurl_1.95-4.8          iterators_1.0.8        
-    ## [71] base64enc_0.1-3         bitops_1.0-6           
-    ## [73] rmarkdown_1.0           gtable_0.2.0           
-    ## [75] codetools_0.2-14        multtest_2.22.0        
-    ## [77] DBI_0.5                 reshape_0.8.5          
-    ## [79] R6_2.1.3                illuminaio_0.8.0       
-    ## [81] GenomicAlignments_1.2.2 knitr_1.14             
-    ## [83] rtracklayer_1.26.3      KernSmooth_2.23-15     
-    ## [85] stringi_1.1.1           BatchJobs_1.6          
-    ## [87] Rcpp_0.12.6
+    ##  [1] nlme_3.1-128            bitops_1.0-6           
+    ##  [3] matrixStats_0.50.2      RColorBrewer_1.1-2     
+    ##  [5] GenomeInfoDb_1.2.5      tools_3.3.0            
+    ##  [7] backports_1.0.3         doRNG_1.6              
+    ##  [9] nor1mix_1.2-1           R6_2.1.3               
+    ## [11] affyio_1.34.0           KernSmooth_2.23-15     
+    ## [13] DBI_0.5                 lazyeval_0.2.0         
+    ## [15] mgcv_1.8-14             colorspace_1.2-6       
+    ## [17] methylumi_2.12.0        base64_2.0             
+    ## [19] preprocessCore_1.28.0   sendmailR_1.2-1        
+    ## [21] formatR_1.4             pkgmaker_0.22          
+    ## [23] rtracklayer_1.26.3      scales_0.4.0           
+    ## [25] checkmate_1.8.1         BatchJobs_1.6          
+    ## [27] genefilter_1.48.1       quadprog_1.5-5         
+    ## [29] affy_1.44.0             digest_0.6.10          
+    ## [31] Rsamtools_1.18.3        illuminaio_0.8.0       
+    ## [33] rmarkdown_1.0           siggenes_1.40.0        
+    ## [35] XVector_0.6.0           base64enc_0.1-3        
+    ## [37] htmltools_0.3.5         RSQLite_1.0.0          
+    ## [39] BBmisc_1.10             BiocInstaller_1.16.5   
+    ## [41] mclust_5.2              BiocParallel_1.0.3     
+    ## [43] RCurl_1.95-4.8          magrittr_1.5           
+    ## [45] Matrix_1.2-6            Rcpp_0.12.6            
+    ## [47] munsell_0.4.3           S4Vectors_0.4.0        
+    ## [49] stringi_1.1.1           yaml_2.1.13            
+    ## [51] nleqslv_3.0.3           MASS_7.3-45            
+    ## [53] zlibbioc_1.12.0         fail_1.3               
+    ## [55] bumphunter_1.6.0        grid_3.3.0             
+    ## [57] minfi_1.12.0            lattice_0.20-33        
+    ## [59] Biostrings_2.34.1       splines_3.3.0          
+    ## [61] multtest_2.22.0         GenomicFeatures_1.18.7 
+    ## [63] annotate_1.44.0         locfit_1.5-9.1         
+    ## [65] knitr_1.14              beanplot_1.2           
+    ## [67] GenomicRanges_1.18.4    rngtools_1.2.4         
+    ## [69] codetools_0.2-14        biomaRt_2.22.0         
+    ## [71] stats4_3.3.0            XML_3.98-1.4           
+    ## [73] evaluate_0.9            foreach_1.4.3          
+    ## [75] gtable_0.2.0            openssl_0.9.4          
+    ## [77] reshape_0.8.5           assertthat_0.1         
+    ## [79] xtable_1.8-2            survival_2.39-5        
+    ## [81] tibble_1.1              iterators_1.0.8        
+    ## [83] GenomicAlignments_1.2.2 AnnotationDbi_1.28.2   
+    ## [85] registry_0.3            IRanges_2.0.1          
+    ## [87] brew_1.0-6
