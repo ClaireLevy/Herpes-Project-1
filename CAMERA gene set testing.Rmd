@@ -2,9 +2,7 @@
 title: "Gene Set Testing"
 author: "Claire Levy"
 date: "March 11, 2016"
-output:
-  md_document:
-    variant: markdown_github
+output: github_document
 ---
 
 
@@ -71,29 +69,35 @@ y<-exprs(expressedProbes.lumi)
 
 load("RdataOutput/CELLStt3.Rdata")#top table for cells V186.24 DE probes
 
-load("RdataOutput/design.Rdata")#explant design matrix
+#split CELLStt3 into "UP" and "DOWN" regulated probes
 
-###Using CELLStt3 probes as the gene set (so just V186.24 cells data, no other time points and not split into up and down)
+CELLStt3UP<-CELLStt3 %>% 
+  filter(logFC>0)
 
-#set up the gene set for index. There are 11076 probes (8873 unique ones) BUT all of the PROBE_ID's (ILMN_xxx) are unique. This means that there are multiple PROBE_ID's per ENTREZ.
-
-
-gene.set<-list(as.character(CELLStt3$PROBE_ID))
-
-
-
-#IDs from eset: PROBE_IDs from the data I'm analyzing (not the pre-determined gene set)
-
-identifiers = as.character(fData(expressedProbes.lumi)[,"PROBE_ID"])
+CELLStt3DOWN<-CELLStt3 %>% 
+  filter(logFC<0)
 
 
 
+#set up the gene sets for index. There are 11076 probes (8873 unique ones) BUT 
 
-#make index with CELLStt3 probes and eset IDs
+
+gene.sets<-list("UP"=CELLStt3UP$ENTREZ_GENE_ID, "DOWN"=CELLStt3DOWN$ENTREZ_GENE_ID)
+
+
+
+#IDs from eset: ENTREZ_IDs from the data I'm analyzing (not the pre-determined gene set)
+
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+
+
+
+#make index with gene.sets entreZs and eset IDs
 #"list of integer vectors, each vector containing the #indices of a gene set in the vector identifiers."
 
 
-index<-ids2indices(gene.sets = gene.set, identifiers = identifiers)
+index<-ids2indices(gene.sets = gene.sets, identifiers = identifiers)
 
 #define a matrix of the contrast that you want the results for
 contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
@@ -102,7 +106,10 @@ contr<-makeContrasts(TreatV186.24-TreatMock.24, levels = design)
 cameraResult<-camera(y = y, index = index, design = design, contrast = contr )
 
 pander(cameraResult)
+
 ```
+
+This is weird.
 
 ## Test 2
 
@@ -127,15 +134,13 @@ names(CELLSttList) <-c("CELLS_V186.3","CELLS_V186.8","CELLS_V186.24")
 #at the same time, select just the column I'm interested in.
 getUP<-function(df){
   df%>%
-    filter(logFC>0)%>%
-    select(PROBE_ID)
+    filter(logFC>0)
 }
 
 
 getDOWN<-function(df){
   df%>%
-    filter(logFC<0)%>%
-    select(PROBE_ID)
+    filter(logFC<0)
 }
 
 
@@ -149,14 +154,14 @@ CELLSV186DOWN<-lapply(CELLSttList,FUN=getDOWN)
 
 names(CELLSV186UP)<-paste(names(CELLSV186UP), "UP", sep= "")
 
+CELLSV186UP<-bind_rows(CELLSV186UP)
+
 names(CELLSV186DOWN)<-paste(names(CELLSV186DOWN), "DOWN", sep= "")
 
+CELLSV186DOWN<-bind_rows(CELLSV186DOWN)
+
 #make it into one list
-CELLSV186DE<-c(CELLSV186UP,CELLSV186DOWN)
-
-#Extract just the PROBE_IDs in the appropriate character format.
-
-PROBE_ID_CELLSV186DE<-lapply(CELLSV186DE, FUN=function(x)as.character(x$PROBE_ID))
+CELLSV186DE<-list("UP" = CELLSV186UP$ENTREZ_GENE_ID,"DOWN" = CELLSV186DOWN$ENTREZ_GENE_ID)
 
 
 ```
@@ -170,13 +175,13 @@ PROBE_ID_CELLSV186DE<-lapply(CELLSV186DE, FUN=function(x)as.character(x$PROBE_ID
 y<-exprs(expressedProbes.lumi)
 
 #IDs from eset
-identifiers = as.character(fData(expressedProbes.lumi)[,"PROBE_ID"])
+identifiers = as.character(fData(expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
 
 
 
 #I am using my list of DE probes from the 3 different timepoints for CELLSV186 UP and DOWN regulated as my gene sets here. I made this list above.
 
-index2<-ids2indices(gene.sets = PROBE_ID_CELLSV186DE, identifiers = identifiers)
+index2<-ids2indices(gene.sets = CELLSV186DE, identifiers = identifiers)
 
 
 #define a matrix of the contrast that you want the results for
@@ -187,6 +192,8 @@ V186cameraResult<-camera(y = y, index = index2, design = design, contrast = cont
 
 pander(V186cameraResult)
 ```
+This is also weird and makes me think there is a mistake somewhere.
+
 
 ## Test 3
 Now the Hallmark gene set from MSigDB (prepared for R here: http://bioinf.wehi.edu.au/software/MSigDB/, accessed 22Apr16). Note that ENTREZ_GENE_ID is the ID provided for these gene sets, so I'll have to use that for my identifiers.
