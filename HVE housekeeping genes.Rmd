@@ -22,39 +22,112 @@ library(dplyr)
 library(limma)
 library(stringr)
 library(reshape2)
+library(ggplot2)
+library(pander)
 ```
 
-```{r find number of probes not meeting c}
+
+
+
+
+```{r V186.24   non DE}
 #load data from the markdown_vaginal_cell_microarray.Rmd script. This data has already been filtered for detection. 
 load("RdataOutput/CELLSfit2eBayes.Rdata")
 
-# I am basically following the same steps here as I did for finding DE probes.
+# I am basically following the same steps here as I did for finding DE probes except I will filter for the opposite criteria, i.e. pvalue >0.05 and |lfc| <0.5.
 
-#method=separate is same as doing topTable for all coefs separately
-results<-decideTests(fit2,method="separate", adjust.method="BH",
-                      p.value=0.05, lfc=0.5)
+#I only care about the 24hr timepoints for now.
+#by not specifying a lfc and pval cutoff in the toptable call, I will get data for all probes (no filtering yet)
+CELLSttV186.24all<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=Inf)
 
+# add a column indicating which contrast this is for
 
-resultsDF<-as.data.frame(results)
-resultsDF$ENTREZ_GENE_ID<-rownames(resultsDF)
-rownames(resultsDF)<-NULL
+CELLSttV186.24all<-mutate(CELLSttV186.24all,contrast = "V186.24vsMock.24")
 
-
-#melt the df for easy summarizing
-
-resultsDFmelt<-melt(resultsDF, id.vars="ENTREZ_GENE_ID", variable.name = "contrast", value.name= "cutoff_result")
+```
 
 
-#number of up and down regulated probes based on 
-#p.val at least 0.05 and lfc at least 0.5
+```{r SD90.24}
 
-#Here I want to select the probes that have "0", i.e. the ones that did NOT fit the cutoff of |lfc|>0.5 and pval <0.05 because I am looking for probes with small differences between mock and infected. 
+CELLSttSD90.24all<-topTable(fit2,coef="SD90.24vsMock.24", adjust.method = "BH", number=Inf)
 
-# I also only want to look at the contrasts for the 24 hr timepoints
+# add a column indicating which contrast this is for
 
-nonDE24hr<-resultsDFmelt %>%
-  filter(cutoff_result == 0)%>%
-  filter(str_detect(contrast,".24"))
+CELLSttSD90.24all<-mutate(CELLSttSD90.24all,contrast = "SD90.24vsMock.24")
+```
+
+```{r combine SD90 and V186 data}
+
+CELLStt_186_SD90_all <- bind_rows(CELLSttSD90.24all,CELLSttV186.24all)
+
+#plot
+ggplot(CELLStt_186_SD90_all, aes(x = logFC,y = -log10(adj.P.Val)))+
+  geom_point(aes(), alpha = 0.8)+
+  facet_wrap(~contrast)+
+  ggtitle("V186 and SD90 24hrs: all probes with pvalue >0.05 and |lfc|<0.5")
+
+
+
+
+#now filter for just the probes with pval > 0.05 and |lfc|<0.5 (opposite of my criteria for DE probes)
+
+CELLStt_186_SD90_nonDE<-CELLStt_186_SD90_all%>%
+  filter(abs(logFC)<0.5,adj.P.Val>0.05 )
+
+
+```
+
+
+```{r only fisher endogenous controls}
+
+#applied biosystems (fisher now I guess) offers 11 endogenous controls for qPCR:
+
+http://www.thermofisher.com/order/catalog/en/US/adirect/lt?cmd=catDisplayStyle&catKey=101&filterDispName=TaqMan%26reg%3B+Endogenous+Controls&filterDispName1=Human&filterType=1&OP=filter&filter=ft_1101%2Ff_2006599*&filter1=ft_7206%2Ff_481506*&_bcs_=H4sIAAAAAAAAAH2MQQqAMAwEX5OTKFpBvHrxLPiEGqlgjaSp%2Fb7rB4RlB2Zh647acVHZsrdUkRuq%0AlfU5PKcfH8xu6idyM1JKaSywRtmPBDZeInROKL5QQSIDohvGYPHEA7n%2BSzuaZgZedPbeBIcAAAA%3D
+
+
+# Here are the symbols and entrez IDs
+# ACTB: 60
+# RNA18s5:100008588
+# GAPDH:2597
+# PPIA:5478
+# B2M: 567
+# GUSB: 2990
+# HPRT1: 3251
+# PGK1: 5230
+# RPLPO: 6175
+# TBP: 6908
+# TFRC: 7037 
+
+#make a df of the symbols and IDS
+
+endogCntls <-data.frame(symbol = c("ACTB", "RNA18s5","GAPDH","PPIA","B2M","GUSB","HPRT1","PGK1","RPLPO","TBP","TFRC"),
+                        ENTREZ_GENE_ID = c("60", "100008588","2597","5478","567","2990","3251","5230","6175","6908","7037"))
+
+
+#add a column to the nonDE top table saying whether or not the ENTREZ id is one of the endog cntls
+
+CELLStt_186_SD90_nonDE<-CELLStt_186_SD90_nonDE %>%
+                                   mutate(endog.cntl = (ENTREZ_GENE_ID %in% endogCntls$ENTREZ_GENE_ID))%>%
+  arrange(endog.cntl)
+
+# the gene for RNA18s5 shows up as a "LOC" gene instead of giving me the symbol I expect, but when I look up the LOC symbol in NCBI it takes me to human RNA18s5 so I guess that is right...
+
+#plot
+ggplot(CELLStt_186_SD90_nonDE, aes(x = logFC,y = -log10(adj.P.Val)))+
+  geom_point(aes(color = endog.cntl),alpha = .6)+
+  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))+
+  facet_wrap(~contrast)+
+  ggtitle("V186 and SD90 24hrs: all probes with pvalue >0.05 and |lfc|<0.5")
+
+
+cntlSummary<-CELLStt_186_SD90_nonDE %>%
+  filter(endog.cntl == "TRUE")%>%
+  select(contrast,TargetID,logFC, adj.P.Val)%>%
+  arrange(TargetID)
+
+#replace LOC100008588 with 
+
+pander(cntlSummary)
 
 ```
 
