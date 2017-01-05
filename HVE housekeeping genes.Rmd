@@ -1,0 +1,60 @@
+---
+title: "Looking for housekeeping genes in cell MA data"
+author: "Claire Levy"
+date: "January 4, 2017"
+output: html_document
+---
+
+We would like to find a good housekeeping gene to use for qPCR with HSV2 infected and un-infected human vaginal epithelial cells. Here I will analyze the results of the microarray experiment that Lamar did for the Herpes P01 project to look for probes with the following criteria:
+
+* Probes for which there were at least 3 samples with detection p-values
+that were <0.05. See documentation in my script that analyzes the HVE microarray data for rationale behind this choice.
+
+* Probes with small difference in log2 fold change (<0.5) between mock and infected conditions.
+
+* Probes with large p-value between mock and infected (p > 0.05)
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(dplyr)
+library(limma)
+library(stringr)
+library(reshape2)
+```
+
+```{r find number of probes not meeting c}
+#load data from the markdown_vaginal_cell_microarray.Rmd script. This data has already been filtered for detection. 
+load("RdataOutput/CELLSfit2eBayes.Rdata")
+
+# I am basically following the same steps here as I did for finding DE probes.
+
+#method=separate is same as doing topTable for all coefs separately
+results<-decideTests(fit2,method="separate", adjust.method="BH",
+                      p.value=0.05, lfc=0.5)
+
+
+resultsDF<-as.data.frame(results)
+resultsDF$ENTREZ_GENE_ID<-rownames(resultsDF)
+rownames(resultsDF)<-NULL
+
+
+#melt the df for easy summarizing
+
+resultsDFmelt<-melt(resultsDF, id.vars="ENTREZ_GENE_ID", variable.name = "contrast", value.name= "cutoff_result")
+
+
+#number of up and down regulated probes based on 
+#p.val at least 0.05 and lfc at least 0.5
+
+#Here I want to select the probes that have "0", i.e. the ones that did NOT fit the cutoff of |lfc|>0.5 and pval <0.05 because I am looking for probes with small differences between mock and infected. 
+
+# I also only want to look at the contrasts for the 24 hr timepoints
+
+nonDE24hr<-resultsDFmelt %>%
+  filter(cutoff_result == 0)%>%
+  filter(str_detect(contrast,".24"))
+
+```
+
