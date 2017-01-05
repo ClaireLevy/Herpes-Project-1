@@ -1,8 +1,6 @@
 ---
-title: "Looking for housekeeping genes in cell MA data"
-author: "Claire Levy"
-date: "January 4, 2017"
-output: html_document
+title: "Looking for housekeeping genes in human vaginal epithelial cell MA data"
+output: github_document
 ---
 
 We would like to find a good housekeeping gene to use for qPCR with HSV2 infected and un-infected human vaginal epithelial cells. Here I will analyze the results of the microarray experiment that Lamar did for the Herpes P01 project to look for probes with the following criteria:
@@ -25,9 +23,6 @@ library(reshape2)
 library(ggplot2)
 library(pander)
 ```
-
-
-
 
 
 ```{r V186.24   non DE}
@@ -60,14 +55,6 @@ CELLSttSD90.24all<-mutate(CELLSttSD90.24all,contrast = "SD90.24vsMock.24")
 
 CELLStt_186_SD90_all <- bind_rows(CELLSttSD90.24all,CELLSttV186.24all)
 
-#plot
-ggplot(CELLStt_186_SD90_all, aes(x = logFC,y = -log10(adj.P.Val)))+
-  geom_point(aes(), alpha = 0.8)+
-  facet_wrap(~contrast)+
-  ggtitle("V186 and SD90 24hrs: all probes with pvalue >0.05 and |lfc|<0.5")
-
-
-
 
 #now filter for just the probes with pval > 0.05 and |lfc|<0.5 (opposite of my criteria for DE probes)
 
@@ -81,8 +68,6 @@ CELLStt_186_SD90_nonDE<-CELLStt_186_SD90_all%>%
 ```{r only fisher endogenous controls}
 
 #applied biosystems (fisher now I guess) offers 11 endogenous controls for qPCR:
-
-http://www.thermofisher.com/order/catalog/en/US/adirect/lt?cmd=catDisplayStyle&catKey=101&filterDispName=TaqMan%26reg%3B+Endogenous+Controls&filterDispName1=Human&filterType=1&OP=filter&filter=ft_1101%2Ff_2006599*&filter1=ft_7206%2Ff_481506*&_bcs_=H4sIAAAAAAAAAH2MQQqAMAwEX5OTKFpBvHrxLPiEGqlgjaSp%2Fb7rB4RlB2Zh647acVHZsrdUkRuq%0AlfU5PKcfH8xu6idyM1JKaSywRtmPBDZeInROKL5QQSIDohvGYPHEA7n%2BSzuaZgZedPbeBIcAAAA%3D
 
 
 # Here are the symbols and entrez IDs
@@ -111,23 +96,37 @@ CELLStt_186_SD90_nonDE<-CELLStt_186_SD90_nonDE %>%
   arrange(endog.cntl)
 
 # the gene for RNA18s5 shows up as a "LOC" gene instead of giving me the symbol I expect, but when I look up the LOC symbol in NCBI it takes me to human RNA18s5 so I guess that is right...
+```
 
+The following plot shows all probes that meet the adjusted p-value and log2 fold change criteria with the endogenous controls highlighted in red.
+
+```{r plot probes}
 #plot
 ggplot(CELLStt_186_SD90_nonDE, aes(x = logFC,y = -log10(adj.P.Val)))+
   geom_point(aes(color = endog.cntl),alpha = .6)+
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "black"))+
   facet_wrap(~contrast)+
+  guides(color = FALSE)+
   ggtitle("V186 and SD90 24hrs: all probes with pvalue >0.05 and |lfc|<0.5")
+```
 
+
+## Log2 fold change and Adjusted P-values for common endogenous controls that met filtering criteria
+
+```{r summary table}
 
 cntlSummary<-CELLStt_186_SD90_nonDE %>%
   filter(endog.cntl == "TRUE")%>%
   select(contrast,TargetID,logFC, adj.P.Val)%>%
   arrange(TargetID)
 
-#replace LOC100008588 with 
+#replace LOC100008588 with RNA18s5
+cntlSummary$TargetID <-str_replace(cntlSummary$TargetID, "LOC100008588","RNA18s5")
+
 
 pander(cntlSummary)
 
+
+##Do the same procedure as for making a heat map to get exprs data for a certain contrast, then melt to make box plots. See SH's code
 ```
 
