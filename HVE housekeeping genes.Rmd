@@ -98,7 +98,7 @@ CELLStt_186_SD90_nonDE<-CELLStt_186_SD90_nonDE %>%
 # the gene for RNA18s5 shows up as a "LOC" gene instead of giving me the symbol I expect, but when I look up the LOC symbol in NCBI it takes me to human RNA18s5 so I guess that is right...
 ```
 
-The following plot shows all probes that meet the adjusted p-value and log2 fold change criteria with the endogenous controls highlighted in red.
+The following plot shows all probes that meet the adjusted p-value and log2 fold change criteria with the endogenous controls highlighted in red. I used the 11 endogenous controls offered by Fisher: ACTB, RNA18s5,GAPDH,PPIA,B2M,GUSB,HPRT1,PGK1,RPLPO,TBP and TFRC
 
 ```{r plot probes}
 #plot
@@ -130,3 +130,33 @@ pander(cntlSummary)
 ##Do the same procedure as for making a heat map to get exprs data for a certain contrast, then melt to make box plots. See SH's code
 ```
 
+
+
+```{r get exprs for probes summarized above}
+
+
+##### modify this code #####
+
+CELLStt_186_SD90_cntls <- CELLStt_186_SD90_nonDE %>%
+  filter(endog.cntl == "TRUE")
+
+
+
+CELLS_186_SD90_cntls_entrez<-CELLStt_186_SD90_cntls$ENTREZ_GENE_ID #selecting the probes of interest
+
+#from the CELLSexpressedProbes.lumi batch, select just the samples #corresponding to coefs I want (time=24)
+
+load("RdataOutput/CELLSexpressedProbes.lumi.Rdata")
+load("RdataOutput/CELLStargets.Rdata")
+
+
+##THIS DOESNT WORK
+# CELLS_186_SD90_cntls_exprs<-CELLSexpressedProbes.lumi[CELLS_186_SD90_cntls_entrez,CELLStargets$Time=="24" ]
+
+# #To have informative names along the bottom of the heatmap,replace the true Sample Names(numbers)with their corresponding treatment.
+# #i.e. look at the rows in CELLSexpressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
+# 
+# colnames(exprs(CELLSesetSel1))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel1),"Treatment"]
+# 
+# heatmap(exprs(CELLSesetSel1))
+```

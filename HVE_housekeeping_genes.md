@@ -9,7 +9,7 @@ We would like to find a good housekeeping gene to use for qPCR with HSV2 infecte
 
 -   Probes with large p-value between mock and infected (p &gt; 0.05)
 
-The following plot shows all probes that meet the adjusted p-value and log2 fold change criteria with the endogenous controls highlighted in red.
+The following plot shows all probes that meet the adjusted p-value and log2 fold change criteria with the endogenous controls highlighted in red. I used the 11 endogenous controls offered by Fisher: ACTB, RNA18s5,GAPDH,PPIA,B2M,GUSB,HPRT1,PGK1,RPLPO,TBP and TFRC
 
 ![](HVE_housekeeping_genes_files/figure-markdown_github/plot%20probes-1.png)
 
