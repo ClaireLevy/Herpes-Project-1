@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
 library(dplyr)
 library(limma)
+library(lumi)
 library(stringr)
 library(reshape2)
 library(ggplot2)
@@ -25,7 +26,7 @@ library(pander)
 ```
 
 
-```{r V186.24   non DE}
+```{r V186.24 non DE}
 #load data from the markdown_vaginal_cell_microarray.Rmd script. This data has already been filtered for detection. 
 load("RdataOutput/CELLSfit2eBayes.Rdata")
 
@@ -53,7 +54,7 @@ CELLSttSD90.24all<-mutate(CELLSttSD90.24all,contrast = "SD90.24vsMock.24")
 
 ```{r combine SD90 and V186 data}
 
-CELLStt_186_SD90_all <- bind_rows(CELLSttSD90.24all,CELLSttV186.24all)
+CELLStt_186_SD90_all <- bind_rows(CELLSttSD90.24all, CELLSttV186.24all)
 
 
 #now filter for just the probes with pval > 0.05 and |lfc|<0.5 (opposite of my criteria for DE probes)
@@ -131,18 +132,12 @@ pander(cntlSummary)
 ```
 
 
+```{r get expression for probes summarized above}
 
-```{r get exprs for probes summarized above}
-
-
-##### modify this code #####
-
+#just the endog. cntls plz
 CELLStt_186_SD90_cntls <- CELLStt_186_SD90_nonDE %>%
   filter(endog.cntl == "TRUE")
 
-
-
-CELLS_186_SD90_cntls_entrez<-CELLStt_186_SD90_cntls$ENTREZ_GENE_ID #selecting the probes of interest
 
 #from the CELLSexpressedProbes.lumi batch, select just the samples #corresponding to coefs I want (time=24)
 
@@ -150,13 +145,53 @@ load("RdataOutput/CELLSexpressedProbes.lumi.Rdata")
 load("RdataOutput/CELLStargets.Rdata")
 
 
-##THIS DOESNT WORK
-# CELLS_186_SD90_cntls_exprs<-CELLSexpressedProbes.lumi[CELLS_186_SD90_cntls_entrez,CELLStargets$Time=="24" ]
+#get the EXPRS from the lumibatch for the Probes in CELLStt_186_SD90_cntls and just for time = 24hrs
 
-# #To have informative names along the bottom of the heatmap,replace the true Sample Names(numbers)with their corresponding treatment.
-# #i.e. look at the rows in CELLSexpressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
-# 
-# colnames(exprs(CELLSesetSel1))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel1),"Treatment"]
-# 
-# heatmap(exprs(CELLSesetSel1))
+
+cntl_exprs<-exprs(CELLSexpressedProbes.lumi)[CELLStt_186_SD90_cntls$ProbeID,
+                                             CELLStargets$Time=="24"]
+
+#The colnames of the exprs are not currently showing which treatment that sample was OR which donor it was, so I will take the pdata for the lumibatch and find the Treatment (I.e. SD90, Mock or V186) that corresponds to that coded colname and do the same for the TissueID. I will paste those pieces of info together separated by a -
+
+colnames(cntl_exprs)<-paste(
+  pData(CELLSexpressedProbes.lumi)[colnames(cntl_exprs),"Treatment"],
+                            pData(CELLSexpressedProbes.lumi)[colnames(cntl_exprs),"TissueID"], sep = "-")
+
+```
+
+```{r set up exprs for plotting}
+
+cntl_exprs<-as.data.frame(cntl_exprs)
+cntl_exprs$ProbeID<-rownames(cntl_exprs)
+
+rownames(cntl_exprs)<-NULL
+
+melt_cntl_exprs <-melt(cntl_exprs, id.vars = "ProbeID", variable.name="Treatment_TissueID",value.name="log2Expression")
+
+#separate the Treatment and Tissue ID info into two different columns
+melt_cntl_exprs <-tidyr::separate(melt_cntl_exprs, "Treatment_TissueID", c("Treatment", "TissueID"), "-")
+
+
+#I only have Probe IDs at this point but I need the symbols so I will merge this df with CELLStt_186_SD90_cntls to get corresponding TargetIDs
+
+symbols_melt_cntl_exprs<-merge(melt_cntl_exprs, CELLStt_186_SD90_cntls, by = "ProbeID")
+
+#now just select the columns I want
+
+symbols_melt_cntl_exprs <- select(symbols_melt_cntl_exprs, ProbeID, TargetID, Treatment, TissueID, log2Expression)
+
+#replace LOC100008588 with RNA18s5
+symbols_melt_cntl_exprs$TargetID <-str_replace(symbols_melt_cntl_exprs$TargetID, "LOC100008588","RNA18s5")
+
+```
+
+
+
+
+```{r plot the cntl exprs}
+ggplot(symbols_melt_cntl_exprs, aes(x = Treatment, y = log2Expression)) + 
+   geom_point(aes(color = TissueID), size = 3) + 
+   facet_wrap(~TargetID)+
+  ggtitle("log2 probe expression of endogenous controls \n with |log2 fold change| < 0.5 \n and adjusted p-value > 0.05")
+
 ```

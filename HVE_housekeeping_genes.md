@@ -106,3 +106,5 @@ Log2 fold change and Adjusted P-values for common endogenous controls that met f
 </tr>
 </tbody>
 </table>
+
+![](HVE_housekeeping_genes_files/figure-markdown_github/plot%20the%20cntl%20exprs-1.png)
