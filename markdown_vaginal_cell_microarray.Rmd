@@ -1,14 +1,12 @@
 
 ---
-output:
-  md_document:
-    variant: markdown_github
+title: Vaginal cell HSV2 infection microarray
+output: github_document
 ---
 
-"Vaginal cell herpes infection experiment"
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r read in raw data,echo=FALSE,message=FALSE, warning=FALSE, cache = TRUE}
 require(dplyr)
 require(lumi)
 require(limma)
@@ -40,7 +38,7 @@ LMF left sample 3E out of the analysis because it was determined that there was 
 
  Density plot, cdf plot, sample relations, boxplot. Looks like 3D and 6D are outliers, both are V186 24hrs.
  
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r raw data plots,echo=FALSE,message=FALSE, warning=FALSE}
 #density plot
 density(RAW.lumi)
 
@@ -53,14 +51,20 @@ plot(RAW.lumi, what='sampleRelation',method="mds")
 
 #boxplot
 boxplot(RAW.lumi)
+```
 
 
-#adding in more complete pData that matches my formatting for the #explant data. 
+```{r add pData,echo=FALSE,message=FALSE, warning=FALSE}
+
+#adding in more complete pData that matches my formatting for the explant data. 
 
 pData <- read.table("phenoDataInput/vaginalCellMicroarrayPhenoData.txt",
                        sep="\t",row.names=1, header=TRUE)
 
 pData<- pData[-26,] #remove sample 3E from the pData so it will work nicely with the lumiBatch where I did the same
+```
+
+```{r make miame,echo=FALSE,message=FALSE, warning=FALSE}
 
 #create metadata df
 metadata<- data.frame(labelDescription = c("PTID","Sampling Time", "Treatment:either a virus strain or Mock."),
@@ -85,11 +89,15 @@ complete.RAW.lumi <- new("LumiBatch", exprs = exprs(RAW.lumi),phenoData = adf,
 
 save(complete.RAW.lumi,file = "RdataOutput/CELLScomplete.RAW.lumi.Rdata")
 
+```
 
-###################BACKGROUND CORRECTION ####################
+```{r bg correct,echo=FALSE,message=FALSE, warning=FALSE}
+###################BACKGROUND CORRECTION ####
 #the data we got from the core had no background correction when we did the explant experiment so I assume this wasn't corrected either.
 B.complete.RAW.lumi<-lumiB(complete.RAW.lumi)
+```
 
+```{r VST RSN QC,echo=FALSE,message=FALSE, warning=FALSE, cache = TRUE}
 
 #################### VST TRANSFORMATION ######################
 #"Stabilizing the expression variance based on
@@ -108,10 +116,10 @@ QNTB.complete.RAW.lumi <- lumiQ(NTB.complete.RAW.lumi,detectionTh=0.05)
 save(QNTB.complete.RAW.lumi, file = "RdataOutput/CELLSQNTB.complete.RAW.lumi.Rdata")
 ```
 
-PLOTS OF NORMALIZED DATA: all data, then just 6D and 3D
+PLOTS OF NORMALIZED DATA
 
-
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+* Note that 3D and 6D are still off by themselves. They represent V186 infection after 24hrs for TissueID 1 and 3.
+```{r normalized plots,echo=FALSE,message=FALSE, warning=FALSE}
 
 density(QNTB.complete.RAW.lumi)
 
@@ -134,7 +142,7 @@ Our treatment combinations are TissueID/Treatment/Time
 We have 3 Tissue IDs x 3 Treatments x 3 time points = 27 so the smallest number
  of replicates possible for any of those 3 arrays is 3
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r filter by detection,echo=FALSE,message=FALSE, warning=FALSE}
 
 
 detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=3
@@ -146,8 +154,8 @@ detectedProbes <- rowSums(detection(QNTB.complete.RAW.lumi)<0.05)>=3
 CELLSexpressedProbes.lumi <-QNTB.complete.RAW.lumi[detectedProbes,]
 ```
 
-how many probes did we have before and after filtering?
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+How many probes did we have before and after filtering?
+```{r filter results,echo=FALSE,message=FALSE, warning=FALSE}
 dims(QNTB.complete.RAW.lumi)#47323
 
 dims(CELLSexpressedProbes.lumi)#22894
@@ -157,16 +165,16 @@ dims(CELLSexpressedProbes.lumi)#22894
 How many removed?
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r probes removed,echo=FALSE,message=FALSE, warning=FALSE}
 
 dims(QNTB.complete.RAW.lumi)-dims(CELLSexpressedProbes.lumi)#20192
 
-save(RdataOutput/CELLSexpressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdata")
+
 ```
 
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r targets and design matrix,echo=FALSE,message=FALSE, warning=FALSE}
 
 
 ############### TARGETS AND DESIGN MATRIX ###################
@@ -174,20 +182,22 @@ save(RdataOutput/CELLSexpressedProbes.lumi, file="CELLSexpressedProbes.lumi.Rdat
 
 CELLStargets<-pData(CELLSexpressedProbes.lumi)%>%
   select(TissueID, Treatment,Time)
+
+
+
 CELLSTissueID<- factor(CELLStargets$TissueID)
 CELLSTreat <-factor(paste(CELLStargets$Treatment,CELLStargets$Time, sep="."))
 
 CELLSdesign<-model.matrix (~0+CELLSTreat+CELLSTissueID)
-save(design, file="CELLSdesign.Rdata")
 
 
 ```
 
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r fit model,echo=FALSE,message=FALSE, warning=FALSE}
 
 
-####################### FIT MODEL TO PROBES ###################
+####################### FIT MODEL TO PROBES 
 
 fit <- lmFit(CELLSexpressedProbes.lumi,design=CELLSdesign)
 save(fit, file="RdataOutput/CELLSfit.Rdata")
@@ -225,13 +235,13 @@ save(fit2, file= "RdataOutput/CELLSfit2eBayes.Rdata")
 
 How many probes are up and down regulated for each contrast?
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r number of up and down probes,echo=FALSE,message=FALSE, warning=FALSE}
 
 #method=separate is same as doing topTable for all coefs separately
 results<-decideTests(fit2,method="separate", adjust.method="BH",
                       p.value=0.05, lfc=0.5)
 
-save(results, file= "RdataOutput/CELLSdecideTestsResults.Rdata")
+
 
 #turn the results matrix into a data frame and make the
 #probeID a real column and remove the rownames
@@ -282,7 +292,7 @@ ggplot(meltSummary,aes(x=Time, y = Probes))+
 
 V186 vs mock at 3hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r tt1 heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 
 #adj p values <0.05 and lfc >=0.5
 
@@ -292,7 +302,7 @@ CELLSselected1<-rownames(CELLStt1) #selecting the probes of interest
 
 #from the CELLSexpressedProbes.lumi batch, select just the samples #corresponding to the corresponding coefs (time=24, treatment not SD90)
 
-CELLSesetSel1<-CELLSexpressedProbes.lumi[CELLSselected1,targets$Time=="3"& targets$Treatment !="SD90" ]
+CELLSesetSel1<-CELLSexpressedProbes.lumi[CELLSselected1,CELLStargets$Time=="3"& CELLStargets$Treatment !="SD90" ]
 
 #To have informative names along the bottom of the heatmap,replace the true Sample Names(numbers)with their corresponding treatment.
 #i.e. look at the rows in CELLSexpressedProbes.lumi that match the colnames in exprs and provide the value for Treatment in those rows. Set that as the new colnames.
@@ -304,13 +314,13 @@ heatmap(exprs(CELLSesetSel1))
 
 V186 vs mock at 8hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r tt2 heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 #repeat for coefs 2
 CELLStt2<-topTable(fit2,coef="V186.8vsMock.8", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
 CELLSselected2<-rownames(CELLStt2) #selecting the probes of interest
 
-CELLSesetSel2<-CELLSexpressedProbes.lumi[CELLSselected2,targets$Time=="8"& targets$Treatment !="SD90" ]
+CELLSesetSel2<-CELLSexpressedProbes.lumi[CELLSselected2,CELLStargets$Time=="8"& CELLStargets$Treatment !="SD90" ]
 
 colnames(exprs(CELLSesetSel2))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel2),"Treatment"]
 
@@ -320,32 +330,36 @@ heatmap(exprs(CELLSesetSel2))
 
 V186 vs mock at 24hr
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+*There are only 2 samples for V186 because we removed a sample that may have had a pipetting error.
+
+```{r tt3 heatmap,echo=FALSE,message=FALSE, warning=FALSE}
 
 #and coef3
 CELLStt3<-topTable(fit2,coef="V186.24vsMock.24", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
 
 CELLSselected3<-rownames(CELLStt3) #selecting the probes of interest
 
-CELLSesetSel3<-CELLSexpressedProbes.lumi[CELLSselected3,targets$Time=="24"& targets$Treatment !="SD90" ]
+CELLSesetSel3<-CELLSexpressedProbes.lumi[CELLSselected3,CELLStargets$Time=="24"& CELLStargets$Treatment !="SD90" ]
 
 colnames(exprs(CELLSesetSel3))<-pData(CELLSexpressedProbes.lumi)[colnames(CELLSesetSel3),"Treatment"]
+
+
 
 heatmap(exprs(CELLSesetSel3))
 ```
 
-```{r,echo=FALSE,message=FALSE, warning=FALSE}
+```{r combine toptables,echo=FALSE,message=FALSE, warning=FALSE}
 
 
 ##### PREPARING DATA TO READ INTO IDB #################
-
+#make a list of all the top tables
 CELLSttList<-list(CELLStt1, CELLStt2,CELLStt3)
 
-save(CELLSttList, file = "RdataOutput/CELLSttList.Rdata")
-
+#Make a df that contains the probe annotation that I want
 ProbeIDandSymbol<-fData(RAW.lumi)[,c(1,4,7)]
+```
 
-save(ProbeIDandSymbol, file="RdataOutput/CELLSProbeIDandSymbol.Rda")
+```{r make toptables shorter,echo=FALSE,message=FALSE, warning=FALSE}
 
 #function to get short versions of the tt's and include
 #probeID, entrez and symbols
@@ -363,7 +377,10 @@ short<-df[,c("logFC","adj.P.Val")]
 CELLSshortTTlist<-lapply(CELLSttList,FUN=getInteresting)
 
 names(CELLSshortTTlist) <-c("CELLS_V186.3","CELLS_V186.8","CELLS_V186.24")
+```
 
+
+```{r get up and down reg probes,echo=FALSE,message=FALSE, warning=FALSE}
 #functions to get the up and down regulated probes
 
 getUP<-function(df){
@@ -383,20 +400,20 @@ getDOWN<-function(df){
 #get upreg
 CELLSV186UP<-lapply(CELLSshortTTlist,FUN=getUP)
 
-save(CELLSV186UP, file="CELLSV186UP.Rdata")
+
 #get downreg      
 CELLSV186DOWN<-lapply(CELLSshortTTlist,FUN=getDOWN)
-save(CELLSV186DOWN, file = "CELLSV186DOWN.Rdata")
+```
 
-
+```{r write out tables,echo=FALSE,message=FALSE, warning=FALSE}
 #mapply looping over both list itself and the list names to name the txt files
 
 mapply(write.table,CELLSV186UP,file=paste("IDBinput/",names(CELLSV186UP),"UP",".txt", sep=""),sep="\t",row.names=FALSE)
 
 mapply(write.table,CELLSV186DOWN,file=paste("IDBinput/",names(CELLSV186DOWN),"DOWN",".txt",sep=""),sep="\t",row=FALSE)
+```
 
-
-
+```{r readin IDB results,echo=FALSE,message=FALSE, warning=FALSE}
 ###reading in the InnateDB results of the GO analysis. 
 library(dplyr)
 library(reshape2)
@@ -429,56 +446,56 @@ shortgeneIDBdata<- bind_rows(shortgeneIDBdata, .id = "TimepointandDirection")
 #write out
 
 write.csv(shortgeneIDBdata, file = "INNATE DB RESULTS/Excel for FH from IDB/CELLS/CELLSallGenesV186_3_8_24_upAndDown.csv")
+```
 
 
+
+```{r function to make IDB results readable,echo=FALSE,message=FALSE, warning=FALSE}
 
 #annoyingly, there are several rows in the entrez column that have multiple numbers separated by a comma. All correspond to the same gene name (symbol). I want to separate out those rows, melt them so that there is one entrez id per line and then rbind with the rest of the data.
 
-
-
-
-noCommas<- function(df){
-  if(all(str_detect(df$entrez,",")==FALSE)){
-    
-    rownames(df)<-NULL
-    
-    m<-df[,c("entrez","name","fullname")]
-    
-    return(m) ## This part is for the df's in the list that DON'T have any commas and should be left alone
-  }
-  
-  x<-filter(df,str_detect(df$entrez,",")==TRUE)
-  
-  x$position<-rownames(x)
-  
-  rownames(x)<-NULL
-  
-  
-  y<-melt(str_split(x$entrez, pattern=","))#if comma, split, then melt
-  
-  colnames(y)<-c("singleEntrez","position")#position indicates the original position the entrez was in
-  
-  z<-merge(y, x, by="position")#will get the names and full names to repeat
-  
-  a<-z[,c("singleEntrez","name","fullname")] #just get the columns I want
-  
-  names(a)[1]<-"entrez"
-  #next step rbinds the fixed data with its corresp data that had no commas and leaves out the goTerms column
-  b<-filter(df,str_detect(df$entrez,",")==FALSE)%>%
-    select(-goTerms)%>%
-    rbind(a)
-  
-  return(b)
-
-}
-
-
-
-
-#lapply over the list of dataframes
-CELLSExtracellularGenesV186<-lapply(shortgeneIDBdata, FUN=noCommas)
-
-save(CELLSExtracellularGenesV186, file="CELLSExtracellularGenesV186.Rdata")
+# noCommas<- function(df){
+#   if(all(str_detect(df$entrez,",")==FALSE)){
+#     
+#     rownames(df)<-NULL
+#     
+#     m<-df[,c("entrez","name","fullname")]
+#     
+#     return(m) ## This part is for the df's in the list that DON'T have any commas and should be left alone
+#   }
+#   
+#   x<-filter(df,str_detect(df$entrez,",")==TRUE)
+#   
+#   x$position<-rownames(x)
+#   
+#   rownames(x)<-NULL
+#   
+#   
+#   y<-melt(str_split(x$entrez, pattern=","))#if comma, split, then melt
+#   
+#   colnames(y)<-c("singleEntrez","position")#position indicates the original position the entrez was in
+#   
+#   z<-merge(y, x, by="position")#will get the names and full names to repeat
+#   
+#   a<-z[,c("singleEntrez","name","fullname")] #just get the columns I want
+#   
+#   names(a)[1]<-"entrez"
+#   #next step rbinds the fixed data with its corresp data that had no commas and leaves out the goTerms column
+#   b<-filter(df,str_detect(df$entrez,",")==FALSE)%>%
+#     select(-goTerms)%>%
+#     rbind(a)
+#   
+#   return(b)
+# 
+# }
+# 
+# 
+# 
+# 
+# #lapply over the list of dataframes
+# CELLSExtracellularGenesV186<-lapply(shortgeneIDBdata, FUN=noCommas)
+# 
+# save(CELLSExtracellularGenesV186, file="CELLSExtracellularGenesV186.Rdata")
 
 ```
 

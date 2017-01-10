@@ -744,7 +744,7 @@ write.table(forExcelShortGeneIDBdata, file = "INNATE DB RESULTS/Excel for FH fro
 
 originalNoGOId<-lapply(shortgeneIDBdata,FUN = function(x) x[x$goTerms == "",])
 
-
+#I didn't do any formatting of the pathwayORA analysis here.
 
 sessionInfo()
 ```
