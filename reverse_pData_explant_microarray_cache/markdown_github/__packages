@@ -1,0 +1,8 @@
+base
+limma
+BiocGenerics
+Biobase
+lumi
+stringr
+pander
+dplyr

@@ -1,0 +1,319 @@
+---
+title: Comparing CAMERA results when treatments in pData are reversed
+author: "Claire Levy"
+date: "January 10, 2017"
+output: github_document
+---
+
+When I do a CAMERA gene set test using the up and down DE probes from V186.24 HVE as a gene set and compare with the explant data for the same virus and timepoint, I get a significant result for the DOWN regulated gene set, but the corresponding (tested)probes from the explant study are UP regulated relative genes not in the set. This seemed strange and made me wonder what would happen if I reversed the designations for "Mock" and "Treatment"
+
+I did the following here:
+
+* Subset the explant microarray to only include V186 and Mock data
+
+* Reverse the labels for V186 and Mock
+
+* Differential expression analysis as for the original microarray
+
+* Do a CAMERA test with the new label-reverse microarray data
+
+```{r read in data and subset, include=FALSE, cache= TRUE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message= FALSE)
+
+library(limma)
+library(lumi)
+library(stringr)
+library(pander)
+library(dplyr)
+
+#READ IN RAW MICROARRAY DATA FINAL REPORT #######
+#data from shared resources
+
+RAW<-"vaginal_explant_microarray_Illumina\\2015_11_10\\GenomeStudioProject\\SeanHughes_HumanHT12v4_151112\\2015.11.12smhughesFinalReport.txt"
+
+RAW.lumi<-lumiR(RAW,detectionTh = 0.05, na.rm = TRUE,convertNuID = FALSE, dec = '.',
+                parseColumnName = FALSE, checkDupId = FALSE,
+                QC = TRUE,
+                columnNameGrepPattern = list(exprs='AVG_SIGNAL',
+                                                       se.exprs='BEAD_STDERR',
+                                                       detection='Detection Pval',
+                                                       beadNum='Avg_NBEADS'),
+                inputAnnotation=TRUE,
+                annotationColumn=c('ILMN_GENE', 'ENTREZ_GENE_ID', 'GI', 'ACCESSION', 'SYMBOL', 'PROBE_ID', 'PROBE_START', 'PROBE_SEQUENCE', 'CHROMOSOME', 'PROBE_CHR_ORIENTATION', 'PROBE_COORDINATES'),
+                verbose = TRUE)
+
+
+#subset the lumibatch to remove the non-explant data AND the two samples
+#that were left in the finalReport but failed the QC
+
+RAW.lumi<-RAW.lumi[,-c(1:5,32,58)]#32 and 58 are the indices for
+#samples "36" and "64"
+```
+
+
+```{r read in and modify pData}
+
+#read in phenoData (does NOT include any phenoData for
+#non-explant samples)
+
+pData<- read.table("phenoDataInput/explantMicroarrayPhenoData.txt",
+                       sep="\t",row.names=1, header=TRUE)
+
+
+
+
+#make the rownames character(they are numbers, but are actually
+#sample names and lumi has them as character)
+
+rownames(pData)<-as.character(rownames(pData))
+
+pData$TissueID<-as.character(pData$TissueID)
+
+pData$Time <- as.character(pData$Time)
+
+
+#need to remove phenodata for the samples that failed. The rownames
+#start at 7 (1-6 were the tenofovir samples). So the sampleNames are now
+#6 ahead of the the row numbers (sample 33 is in the 27th row of data)
+# missing samples 33=ID326 T1 M D1
+#34=ID 326 T2 V1 D1
+#35=ID 326 T3 V2 D1
+#36 ID 317 T2 M D1
+#45 ID 318 T3 V1 D1
+#63 ID 327 T2 V1 D1
+#64 ID 319 T2 M D1
+
+#make a vector of rownames I want to remove
+toExclude<-c("33","34","35","36","45","63","64")
+
+#to get the indices of the rownames that I want to remove:
+#>which(rownames(pData)%in% toExclude)
+
+#and then remove those indices from pData
+
+pData<-pData[-which(rownames(pData)%in% toExclude),]
+
+
+#make the rownames (the array IDs) into an actual column
+pData$ArrayID<-rownames(pData)
+
+#JUST V186 and Mock AND reverse the infected and mock designations
+
+reverse_pData_M_186_only<-
+  pData %>% 
+  filter(Treatment != "SD90")%>%
+  mutate(Treatment = ifelse(str_detect(Treatment, "V186"), "M","Virus186"))
+
+#make the arrayids in the rownames into an actual column
+rownames(reverse_pData_M_186_only)<-reverse_pData_M_186_only$ArrayID
+
+```
+
+
+```{r subset eset}
+#subset the expression set to just the ArrayIDs I put in the reverse pdata df
+
+Eset_reverse_V186_Mock_only<-RAW.lumi[,reverse_pData_M_186_only$ArrayID]
+```
+
+
+
+```{r combine meta data with eset}
+
+#combine metadata that already exists and the reversed pdata into a new annotated df 
+
+
+#create metadata df (this is the same things as I did in the original analysis,EXCEPT I ALSO HAVE A ROW AND COLUMN DESCRIBING ARRAY ID SINCE I ADDED THAT TO THE PDATA)
+
+
+metadata<- data.frame(labelDescription = c("Tissue,Time,Virus",
+                                           "PTID","Sampling Time","Virus: V2=strain 186, M=Mock", "Treatment:either a virus strain or Mock.",
+                                           "Location of original RNA on 96well plate","Array Sample ID"),
+                      row.names=c("DescriptiveSampleID","TissueID","Time","Dose","Treatment","PlateID", "ArrayID"))
+
+
+
+reverse_adf<-new("AnnotatedDataFrame",data=reverse_pData_M_186_only,varMetadata = metadata)
+
+
+#create experiment data
+experimentData<-new("MIAME",name="Claire Levy",
+                    lab="Florian Hladik Lab",title="Vaginal Explant Microarray")
+
+#make a lumiBatch that contains both the raw data we got from
+#shared resources AND the  REVERSED and JUST V186 and MOCK phenoData, metadata and experiment data
+#that I created MINUS the tenofovir data and the failed samples.
+complete.reverse_V186_Mock_only<-new("LumiBatch", exprs=exprs(Eset_reverse_V186_Mock_only),phenoData=reverse_adf,
+                  experimentData=experimentData,
+                  se.exprs=se.exprs(Eset_reverse_V186_Mock_only),
+                  detection=detection(Eset_reverse_V186_Mock_only),
+                  featureData=featureData(Eset_reverse_V186_Mock_only))
+```
+
+
+```{r background correction,echo=FALSE,message=FALSE, warning=FALSE, results = 'hide'}
+######## BACKGROUND CORRECTION 
+#the data we got from the core had no background correction so I will do it here
+
+complete.reverse_V186_Mock_only<-lumiB(complete.reverse_V186_Mock_only, method = "bgAdjust")
+
+
+#################### VST TRANSFORMATION 
+#"Stabilizing the expression variance based on
+#the bead level expression variance and mean relations"
+
+TB.complete.reverse_V186_Mock_only <-lumiT (complete.reverse_V186_Mock_only)
+
+################## ROBUST SPLINE NORMALIZATION 
+
+NTB.complete.reverse_V186_Mock_only<-lumiN(TB.complete.reverse_V186_Mock_only,method="rsn")
+
+################# QUALITY CONTROL 
+
+QNTB.complete.reverse_V186_Mock_only <- lumiQ(NTB.complete.reverse_V186_Mock_only,detectionTh=0.05)
+
+```
+
+
+
+```{r filter detection,echo=FALSE,message=FALSE, warning=FALSE}
+
+
+#this is how the detection filtering works:
+#Mark the detection pvalues (there is one per probe per sample) with a 1 if <0.05 or a 0 if >0.05
+# using (detection(QNTB.complete.RAW.lumi)<0.05)
+
+#add up the 0's and 1's across each row (i.e. for all the samples)
+#using rowSums
+
+#now you have the number of detection p values <0.05 for each probe
+#for all the samples (max possible = total samples)
+
+#now tell me which probes have a rowSum of >=7 (probes will be marked as TRUE
+# or false if they do or do not have >=7 rowSum)
+            
+reverse_V186_Mock_only_detectedProbes <- rowSums(detection(QNTB.complete.reverse_V186_Mock_only)<0.05)>=7
+
+#now extract just those probes that are TRUE from the lumibatch
+
+reverse_V186_Mock_only_expressedProbes.lumi <-QNTB.complete.reverse_V186_Mock_only[reverse_V186_Mock_only_detectedProbes,]
+```
+
+
+```{r targets and design matrix,echo=FALSE,message=FALSE, warning=FALSE}
+
+############### TARGETS AND DESIGN MATRIX 
+# see section 9.4.1 and 9.4.2 in the limma users guide
+
+reverse_targets<-pData(reverse_V186_Mock_only_expressedProbes.lumi)%>%
+  select(TissueID, Treatment,Time)
+
+TissueID<- factor(reverse_targets$TissueID)
+
+Treat <-factor(paste(reverse_targets$Treatment,reverse_targets$Time, sep="."))
+
+#make the design
+reverse_design<-model.matrix (~0+Treat+TissueID)
+
+```
+
+
+
+```{r fit model to probes,echo=FALSE,message=FALSE, warning=FALSE}
+
+####################### FIT MODEL TO PROBES
+
+reverse_fit <- lmFit(reverse_V186_Mock_only_expressedProbes.lumi,design=reverse_design)
+
+
+#Now we can make any comparisons
+#between the experimental conditions
+
+# If topTable is called and coef has two or more elements,
+# then the specified columns will be extracted from fit and
+# topTableF called on the result. topTable with coef=NULL is 
+# the same as topTableF, unless the fitted model fit has only
+# one column.
+
+reverse_bothcm<-makeContrasts(
+  Virus186.3vsM.3 = TreatVirus186.3-TreatM.3,
+  Virus186.8vsM.8 = TreatVirus186.3-TreatM.8,
+  Virus186.24vsM.24 = TreatVirus186.24-TreatM.24,
+  levels=reverse_design
+)
+
+
+#fit the contrasts  
+reverse_fit2<-contrasts.fit(reverse_bothcm, fit=reverse_fit)
+
+
+#compute diff exprsn
+reverse_fit2 <-eBayes(reverse_fit2)
+```
+
+
+```{r V186 vs mock at 24hr,echo=FALSE,message=FALSE, warning=FALSE}
+
+
+#toptable for V186.24 vs mock
+reverse_tt3<-topTable(reverse_fit2,coef="Virus186.24vsM.24", adjust.method = "BH", number=Inf, p.value=0.05, lfc=0.5)
+```
+
+
+```{r CAMERA setup get gene set,echo=FALSE,message=FALSE, warning=FALSE}
+
+
+
+#Using the DE probes from the epithelial cell MA V186.24 as the set to compare against.
+
+load("RdataOutput/CELLStt3.Rdata")#top table for cells V186.24 DE probes
+
+#split CELLStt3 into "UP" and "DOWN" regulated probes
+
+CELLStt3UP<-CELLStt3 %>% 
+  filter(logFC>0)
+
+CELLStt3DOWN<-CELLStt3 %>% 
+  filter(logFC<0)
+
+
+CELLSV186.24UpandDown<-list("UP"=CELLStt3UP$ENTREZ_GENE_ID, "DOWN"=CELLStt3DOWN$ENTREZ_GENE_ID)
+```
+
+
+
+```{r CAMERA setup get probes to test,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
+
+
+#IDs from eset: ENTREZ_IDs from the data I'm analyzing (not the pre-determined gene set)
+
+identifiers = as.character(fData(reverse_V186_Mock_only_expressedProbes.lumi)[,"ENTREZ_GENE_ID"])
+
+
+#the expression set to use
+y<-exprs(reverse_V186_Mock_only_expressedProbes.lumi)
+
+
+#make index with gene.sets entreZs and eset IDs
+#"list of integer vectors, each vector containing the #indices of a gene set in the vector identifiers."
+
+
+index<-ids2indices(gene.sets = CELLSV186.24UpandDown, identifiers = identifiers)
+
+
+#define a matrix of the contrast that you want the results for
+contr<-makeContrasts(TreatVirus186.24-TreatM.24, levels = reverse_design)
+```
+
+##CAMERA results
+
+A CAMERA test using the DE probes for V186.24 from the HVE experiment as the gene set gives the following result:
+
+```{r CAMERA test,echo=FALSE,message=FALSE, warning=FALSE, cache= TRUE}
+
+#put arguments into camera, DESIGN matrix is the same as for the explant analysis 
+V186.24cameraResult<-camera(y = y, index = index, design = reverse_design, contrast = contr )
+
+pander(V186.24cameraResult)
+```
+
